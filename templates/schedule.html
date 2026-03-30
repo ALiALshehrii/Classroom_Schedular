@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Schedule – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Schedule</h1>
+        <p>Prototype view of the academic schedule.</p>
+    </div>
+
+    <form method="get" action="{{ url_for('schedule_view') }}">
+        <div class="filter-bar">
+            <div>
+                <label>Day</label>
+                <select name="day" class="form-select">
+                    <option value="all" {% if day_filter=='all' %}selected{% endif %}>All Days</option>
+                    {% for d in days %}
+                    <option value="{{ d }}" {% if day_filter==d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Time</label>
+                <select name="time" class="form-select">
+                    <option value="all" {% if time_filter=='all' %}selected{% endif %}>All Times</option>
+                    {% for t in times %}
+                    <option value="{{ t }}" {% if time_filter==t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Room ID</label>
+                <select name="room_id" class="form-select">
+                    <option value="all" {% if room_filter=='all' %}selected{% endif %}>All Rooms</option>
+                    {% for r in room_ids %}
+                    <option value="{{ r }}" {% if room_filter==r %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Instructor</label>
+                <select name="instructor" class="form-select">
+                    <option value="all" {% if instructor_filter=='all' %}selected{% endif %}>All Instructors</option>
+                    {% for ins in instructors %}
+                    <option value="{{ ins }}" {% if instructor_filter==ins %}selected{% endif %}>{{ ins }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 align-items-end">
+                <button type="submit" class="btn btn-dt-primary">Search</button>
+                <a href="{{ url_for('schedule_view') }}" class="btn btn-dt-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="legend-row">
+        <span class="status-badge">Normal</span>
+        <span class="status-badge">Overcrowded</span>
+        <span class="status-badge">Underutilized</span>
+    </div>
+
+    <div class="dt-table-wrapper">
+        <div class="table-header">
+            <h5 class="table-title">Full Academic Schedule</h5>
+            <span class="muted-label">Showing: {{ schedule | length }} sections</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table dt-table mb-0">
+                <thead>
+                    <tr>
+                        <th>CRN</th>
+                        <th>Code</th>
+                        <th>Course Name</th>
+                        <th>Instructor</th>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Room</th>
+                        <th>Type</th>
+                        <th>Capacity</th>
+                        <th>Enrolled</th>
+                        <th>Utilization %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if schedule %}
+                    {% for row in schedule %}
+                    <tr>
+                        <td>{{ row.CRN }}</td>
+                        <td><code>{{ row.Course_Code }}</code></td>
+                        <td style="max-width:200px;">{{ row.Course_Name }}</td>
+                        <td>{{ row.Instructor }}</td>
+                        <td>{{ row.Day }}</td>
+                        <td>{{ row.Time }}</td>
+                        <td>{{ row.Room_ID }}</td>
+                        <td>{{ row.Room_Type }}</td>
+                        <td>{{ row.Capacity }}</td>
+                        <td>{{ row.Enrolled }}</td>
+
+                        <td style="min-width:130px;">
+                            {% set util = row.Utilization_Pct %}
+                            <div class="util-bar-wrap">
+                                <div class="util-bar">
+                                    <div class="util-bar-inner" style="width:{{ [util, 100] | min }}%;"></div>
+                                </div>
+                                <span class="util-lbl">{{ util }}%</span>
+                            </div>
+                        </td>
+
+                        <td><span class="status-badge">{{ row.Status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="12">
+                            <div class="empty-state">
+                                <h5>No results match the filter</h5>
+                                <p>Try adjusting your search criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

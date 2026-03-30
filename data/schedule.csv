@@ -1,0 +1,38 @@
+CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrolled,Status
+10001,CS101,Introduction to Computing,Dr. Ahmed Al-Ghamdi,Sun-Tue-Thu,08:00,1001,Lecture Hall,60,58,Normal
+10002,CS201,Data Structures,Dr. Mohammad Al-Otaibi,Sun-Tue-Thu,09:00,1001,Lecture Hall,60,65,Overcrowded
+10003,CS301,Database Systems,Dr. Khalid Al-Shamri,Mon-Wed,08:00,1002,Lecture Hall,60,55,Normal
+10004,CS401,Computer Networks,Dr. Abdullah Al-Dosari,Mon-Wed,10:00,1002,Lecture Hall,60,15,Underutilized
+10005,CS105,C Programming,Dr. Sultan Al-Zahrani,Sun-Tue-Thu,10:00,1003,Lecture Hall,50,48,Normal
+10006,CS205,Object-Oriented Programming,Dr. Faisal Al-Harthi,Mon-Wed,09:00,1003,Lecture Hall,50,72,Overcrowded
+10007,CS110,Computer Fundamentals,Dr. Nasser Al-Qahtani,Sun-Tue-Thu,11:00,1004,Computer Lab,30,28,Normal
+10008,CS210,Advanced Database,Dr. Omar Al-Subai'i,Mon-Wed,11:00,1004,Computer Lab,30,10,Underutilized
+10009,CS115,Programming Lab,Dr. Turki Al-Buqami,Sun-Tue-Thu,13:00,1005,Computer Lab,25,24,Normal
+10010,CS215,Algorithm Analysis,Dr. Rashid Al-Rashidi,Mon-Wed,13:00,2001,Lecture Hall,55,52,Normal
+10011,CS315,Artificial Intelligence,Dr. Salah Al-Asmari,Sun-Tue-Thu,08:00,2001,Lecture Hall,55,70,Overcrowded
+10012,CS415,Machine Learning,Dr. Hamad Al-Anzi,Mon-Wed,08:00,2002,Lecture Hall,50,45,Normal
+10013,CS120,Computer Mathematics,Dr. Yousef Al-Shahri,Sun-Tue-Thu,09:00,2002,Lecture Hall,50,12,Underutilized
+10014,CS220,Theory of Computing,Dr. Ibrahim Al-Qarni,Mon-Wed,09:00,2003,Lecture Hall,50,47,Normal
+10015,CS320,Information Security,Dr. Abdul-Aziz Al-Muzrou,Sun-Tue-Thu,10:00,2003,Lecture Hall,50,44,Normal
+10016,CS420,Cloud Computing,Dr. Mohammad Al-Jahni,Mon-Wed,10:00,2004,Lecture Hall,60,57,Normal
+10017,CS125,Computer Logic,Dr. Saad Al-Tamimi,Sun-Tue-Thu,11:00,2004,Lecture Hall,60,9,Underutilized
+10018,CS225,Operating Systems,Dr. Walid Al-Harbi,Mon-Wed,11:00,2005,Computer Lab,25,23,Normal
+10019,CS325,Computer Networks Lab,Dr. Ayman Al-Ghamdi,Sun-Tue-Thu,13:00,2005,Computer Lab,25,10,Underutilized
+10020,CS425,Network Security,Dr. Nawaf Al-Mutairi,Mon-Wed,13:00,3001,Lecture Hall,40,37,Normal
+10021,CS130,Intro to Programming,Dr. Majid Al-Salmi,Sun-Tue-Thu,08:00,3001,Lecture Hall,40,38,Normal
+10022,CS230,Software Engineering,Dr. Fahad Al-Omari,Mon-Wed,08:00,3002,Lecture Hall,35,32,Normal
+10023,CS330,User Interfaces,Dr. Ryan Al-Zaid,Sun-Tue-Thu,09:00,3002,Lecture Hall,35,11,Underutilized
+10024,CS430,Distributed Computing,Dr. Tariq Al-Asiri,Mon-Wed,09:00,3003,Computer Lab,25,22,Normal
+10025,CS135,Systems Lab,Dr. Badr Al-Ghamdi,Sun-Tue-Thu,10:00,3003,Computer Lab,25,20,Normal
+10026,CS235,Database Foundations,Dr. Anas Al-Rifa'i,Mon-Wed,10:00,3004,Computer Lab,30,27,Normal
+10027,CS335,App Development,Dr. Jasim Al-Mansour,Sun-Tue-Thu,11:00,3004,Computer Lab,30,8,Underutilized
+10028,CS435,Web Programming,Dr. Hussein Al-Ali,Mon-Wed,11:00,3005,Computer Lab,20,19,Normal
+10029,CS140,Algorithm Basics,Dr. Karim Al-Sayed,Sun-Tue-Thu,13:00,3005,Computer Lab,20,18,Normal
+10030,CS240,Systems Analysis,Dr. Ali Al-Zamel,Mon-Wed,13:00,1001,Lecture Hall,60,54,Normal
+10031,CS340,Database Design,Dr. Sami Al-Bishi,Sun-Tue-Thu,08:00,2004,Lecture Hall,60,62,Overcrowded
+10032,CS440,Project Management,Dr. Wael Al-Aqeel,Mon-Wed,08:00,1004,Computer Lab,30,5,Underutilized
+10033,CS145,Advanced Mathematics,Dr. Khalil Al-Khalidi,Sun-Tue-Thu,09:00,2005,Computer Lab,25,23,Normal
+10034,CS245,Information Systems,Dr. Adel Al-Qasim,Mon-Wed,09:00,1001,Lecture Hall,60,60,Normal
+10035,CS345,Quantum Computing,Dr. Mustafa Al-Rashid,Sun-Tue-Thu,10:00,1002,Lecture Hall,60,8,Underutilized
+10036,CS445,Advanced Programming,Dr. Fares Al-Omari,Mon-Wed,08:00,2003,Lecture Hall,50,40,Normal
+10037,CS550,Algorithm Design,Dr. Hani Al-Shafi'i,Mon-Wed,08:00,2003,Lecture Hall,50,35,Normal

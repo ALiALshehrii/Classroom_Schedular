@@ -1,0 +1,16 @@
+Room_ID,Floor,Type,Capacity
+1001,1,Lecture Hall,60
+1002,1,Lecture Hall,60
+1003,1,Lecture Hall,50
+1004,1,Computer Lab,30
+1005,1,Computer Lab,25
+2001,2,Lecture Hall,55
+2002,2,Lecture Hall,50
+2003,2,Lecture Hall,50
+2004,2,Lecture Hall,60
+2005,2,Computer Lab,25
+3001,3,Lecture Hall,40
+3002,3,Lecture Hall,35
+3003,3,Computer Lab,25
+3004,3,Computer Lab,30
+3005,3,Computer Lab,20

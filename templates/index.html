@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Prototype overview of rooms, sections, and occupancy.</p>
+    </div>
+
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value">{{ kpis.total_rooms }}</div>
+                <div class="kpi-label">Total Rooms</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value">{{ kpis.total_sections }}</div>
+                <div class="kpi-label">Total Sections</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value">{{ kpis.overcrowded }}</div>
+                <div class="kpi-label">Overcrowded</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value">{{ kpis.underutilized }}</div>
+                <div class="kpi-label">Underutilized</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-value">{{ kpis.avg_occupancy }}%</div>
+                <div class="kpi-label">Avg Occupancy</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="chart-card h-100">
+                <div class="chart-title">Room Occupancy Rate</div>
+                <canvas id="barChart" height="100"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-card h-100 d-flex flex-column">
+                <div class="chart-title">Section Status Distribution</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="chart-card">
+                <div class="chart-title">Quick Links</div>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('conflicts_view') }}" class="btn btn-dt-primary">View Conflicts</a>
+                    <a href="{{ url_for('recommendations_view') }}" class="btn btn-dt-secondary">Recommendations</a>
+                    <a href="{{ url_for('simulation_view') }}" class="btn btn-dt-secondary">Run Simulation</a>
+                    <a href="{{ url_for('schedule_view') }}" class="btn btn-dt-secondary">View Schedule</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    Chart.defaults.color = '#666666';
+    Chart.defaults.font.family = 'Arial, sans-serif';
+    Chart.defaults.borderColor = 'rgba(0,0,0,0.08)';
+
+    const barLabels = {{ bar_chart.labels | tojson }};
+    const barData = {{ bar_chart.data   | tojson }};
+    const barColors = barData.map(v => {
+        if (v > 100) return '#d9534f';
+        if (v < 40) return '#f0ad4e';
+        return '#5bc0de';
+    });
+
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: barLabels,
+            datasets: [{
+                label: 'Occupancy %',
+                data: barData,
+                backgroundColor: barColors,
+                borderColor: barColors,
+                borderWidth: 1,
+                borderRadius: 2,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}%` } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true, max: 140,
+                    ticks: { callback: v => v + '%' },
+                    grid: { color: 'rgba(0,0,0,0.08)' }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    const pieData = {{ pie_chart | tojson }};
+
+    new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Normal', 'Overcrowded', 'Underutilized'],
+            datasets: [{
+                data: [pieData.Normal, pieData.Overcrowded, pieData.Underutilized],
+                backgroundColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
+                borderColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '62%',
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } }
+            }
+        }
+    });
+</script>
+{% endblock %}

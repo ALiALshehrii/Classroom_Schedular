@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Rooms – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Rooms</h1>
+        <p>Prototype list of available rooms.</p>
+    </div>
+
+    <form method="get" action="{{ url_for('rooms_view') }}">
+        <div class="filter-bar">
+            <div>
+                <label>Filter by Floor</label>
+                <select name="floor" class="form-select">
+                    <option value="all" {% if floor_filter=='all' %}selected{% endif %}>All Floors</option>
+                    <option value="1" {% if floor_filter=='1' %}selected{% endif %}>Floor 1</option>
+                    <option value="2" {% if floor_filter=='2' %}selected{% endif %}>Floor 2</option>
+                    <option value="3" {% if floor_filter=='3' %}selected{% endif %}>Floor 3</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Filter by Type</label>
+                <select name="type" class="form-select">
+                    <option value="all" {% if type_filter=='all' %}selected{% endif %}>All Types</option>
+                    <option value="Lecture Hall" {% if type_filter=='Lecture Hall' %}selected{% endif %}>Lecture Hall
+                    </option>
+                    <option value="Computer Lab" {% if type_filter=='Computer Lab' %}selected{% endif %}>Computer Lab
+                    </option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 align-items-end">
+                <button type="submit" class="btn btn-dt-primary">Apply</button>
+                <a href="{{ url_for('rooms_view') }}" class="btn btn-dt-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="dt-table-wrapper">
+        <div class="table-header">
+            <h5 class="table-title">Room List</h5>
+            <span class="muted-label">Total: {{ rooms | length }} rooms</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table dt-table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Room ID</th>
+                        <th>Floor</th>
+                        <th>Type</th>
+                        <th>Capacity</th>
+                        <th>Capacity Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if rooms %}
+                    {% for room in rooms %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ room.Room_ID }}</td>
+                        <td>{{ room.Floor }}</td>
+                        <td>{{ room.Type }}</td>
+                        <td>{{ room.Capacity }}</td>
+
+                        <td style="min-width:160px;">
+                            {% set pct = [room.Capacity / 60 * 100, 100] | min %}
+                            <div class="util-bar-wrap">
+                                <div class="util-bar" style="flex:1;">
+                                    <div class="util-bar-inner" style="width:{{ pct | int }}%;"></div>
+                                </div>
+                                <span class="util-lbl">{{ room.Capacity }} seats</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <h5>No rooms match the selected filter</h5>
+                                <p>Try changing the filter criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

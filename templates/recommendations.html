@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Recommendations – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Recommendations</h1>
+        <p>Prototype suggestions for better room assignments.</p>
+    </div>
+
+    <div class="conflict-card mb-4">
+        <div style="font-weight:700;margin-bottom:0.35rem;">How recommendations work</div>
+        <div class="muted-label">
+            The system looks for a free room of the same type with enough capacity at the same day and time.
+        </div>
+    </div>
+
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card">
+            <div class="muted-label">Total Overcrowded Sections</div>
+            <div class="kpi-value" style="font-size:1.6rem;">{{ recommendations | length }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="muted-label">Actionable Recommendations</div>
+            {% set solvable = recommendations | selectattr('suggested_room', '!=', 'No alternative available') | list %}
+            <div class="kpi-value" style="font-size:1.6rem;">{{ solvable | length }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="muted-label">No Alternative Found</div>
+            <div class="kpi-value" style="font-size:1.6rem;">{{ recommendations | length - solvable | length }}</div>
+        </div>
+    </div>
+
+    {% if recommendations %}
+    <div class="dt-table-wrapper">
+        <div class="table-header">
+            <h5 class="table-title">Recommendations Table</h5>
+            <span class="muted-label">Total: {{ recommendations | length }} recommendations</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table dt-table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>CRN</th>
+                        <th>Course Name</th>
+                        <th>Day / Time</th>
+                        <th>Current Room</th>
+                        <th>Suggested Room</th>
+                        <th>Current Cap</th>
+                        <th>Suggested Cap</th>
+                        <th>Enrolled</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in recommendations %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ rec.crn }}</td>
+                        <td style="max-width:180px;font-size:0.87rem;">{{ rec.course_name }}</td>
+
+                        <td>
+                            <span class="muted-label">{{ rec.day }}</span><br>
+                            <span style="font-family:monospace;font-weight:700;">{{ rec.time }}</span>
+                        </td>
+
+                        <td>{{ rec.current_room }}</td>
+
+                        <td>
+                            {% if rec.suggested_room != 'No alternative available' %}
+                            {{ rec.suggested_room }}
+                            {% else %}
+                            {{ rec.suggested_room }}
+                            {% endif %}
+                        </td>
+
+                        <td>{{ rec.current_cap }}</td>
+                        <td>{{ rec.suggested_cap }}</td>
+                        <td>{{ rec.enrolled }}</td>
+                        <td>{{ rec.room_type }}</td>
+
+                        <td>
+                            {% if rec.suggested_room != 'No alternative available' %}
+                            <span class="status-badge">Available</span>
+                            {% else %}
+                            <span class="status-badge">Not Found</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="dt-table-wrapper">
+        <div class="empty-state" style="padding:3rem;">
+            <h5>No Overcrowded Sections!</h5>
+            <p>All course sections are within normal capacity limits.</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
