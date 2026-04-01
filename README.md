@@ -48,7 +48,8 @@ project/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/ALiALshehrii/Classroom_Schedular.git
+git clone https://github.com/your-username/campus-digital-twin.git
+cd campus-digital-twin
 ```
 
 ### 2. Install dependencies
