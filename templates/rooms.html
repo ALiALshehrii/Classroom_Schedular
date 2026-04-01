@@ -67,9 +67,9 @@
                         <td>{{ room.Capacity }}</td>
 
                         <td style="min-width:160px;">
-                            {% set pct = [room.Capacity / 60 * 100, 100] | min %}
                             <div class="util-bar-wrap">
                                 <div class="util-bar" style="flex:1;">
+                                    {% set pct = [room.Capacity / max_capacity * 100, 100] | min %}
                                     <div class="util-bar-inner" style="width:{{ pct | int }}%;"></div>
                                 </div>
                                 <span class="util-lbl">{{ room.Capacity }} seats</span>

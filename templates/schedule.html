@@ -106,7 +106,7 @@
                             {% set util = row.Utilization_Pct %}
                             <div class="util-bar-wrap">
                                 <div class="util-bar">
-                                    <div class="util-bar-inner" style="width:{{ [util, 100] | min }}%;"></div>
+                                    <div class="util-bar-inner {{ row.Status | lower }}"style="width:{{ [util, 100] | min }}%;"></div>
                                 </div>
                                 <span class="util-lbl">{{ util }}%</span>
                             </div>
