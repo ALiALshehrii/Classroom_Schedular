@@ -192,8 +192,9 @@ def simulate_move(schedule: pd.DataFrame, rooms: pd.DataFrame,
         "time":         section["Time"],
         "enrolled":     enrolled,
         # Before
-        "old_room":     section["Room_ID"],
-        "old_capacity": old_capacity,
+        "old_room":      section["Room_ID"],
+        "old_room_type": section["Room_Type"],
+        "old_capacity":  old_capacity,
         "old_util":     old_util,
         "old_status":   old_status,
         # After
