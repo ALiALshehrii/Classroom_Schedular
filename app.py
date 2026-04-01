@@ -51,11 +51,13 @@ def rooms_view():
     if type_filter != "all":
         filtered = filtered[filtered["Type"] == type_filter]
 
+    max_capacity = int(rooms["Capacity"].max()) 
     return render_template(
         "rooms.html",
         rooms=filtered.to_dict(orient="records"),
         floor_filter=floor_filter,
         type_filter=type_filter,
+        max_capacity=max_capacity,
     )
 
 
