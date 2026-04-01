@@ -7,6 +7,10 @@
   --text: #222222;
   --muted: #666666;
   --header: #efefef;
+  --success: #5cb85c;
+  --danger: #d9534f;
+  --warning: #f0ad4e;
+  --info: #5bc0de;
 }
 
 *,
@@ -212,10 +216,14 @@ a {
   overflow: hidden;
 }
 
+/* NEW ✅ */
 .util-bar-inner {
   height: 100%;
-  background: #999999;
+  background: #5bc0de;
 }
+.util-bar-inner.overcrowded   { background: #d9534f; }
+.util-bar-inner.normal        { background: #5cb85c; }
+.util-bar-inner.underutilized { background: #f0ad4e; }
 
 .util-lbl {
   font-size: 0.82rem;
@@ -326,3 +334,47 @@ a {
     align-items: flex-start;
   }
 }
+
+
+
+.sim-status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: 0 8px 8px 0;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.sim-status-card.available {
+  border-left: 5px solid #5cb85c;
+  background: #f6fff6;
+}
+
+.sim-status-card.conflict {
+  border-left: 5px solid #d9534f;
+  background: #fff6f6;
+}
+
+.sim-status-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+.sim-status-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.sim-status-card.available .sim-status-title { color: #27500A; }
+.sim-status-card.conflict  .sim-status-title { color: #791F1F; }
+
+.sim-status-sub {
+  font-size: 0.875rem;
+}
+
+.sim-status-card.available .sim-status-sub { color: #3B6D11; }
+.sim-status-card.conflict  .sim-status-sub { color: #A32D2D; }

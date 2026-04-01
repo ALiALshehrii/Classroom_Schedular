@@ -48,7 +48,7 @@ project/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/ALiALshehrii/Classroom_Schedular.git
+git clone git clone https://github.com/ALiALshehrii/Classroom_Schedular.git
 ```
 
 ### 2. Install dependencies
