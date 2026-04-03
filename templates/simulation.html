@@ -18,7 +18,9 @@
                     <select name="crn" class="form-select" required>
                         <option value="">-- Select a Section --</option>
                         {% for c in crns %}
-                        <option value="{{ c }}" {% if selected_crn==c %}selected{% endif %}>CRN {{ c }}</option>
+                        <option value="{{ c.CRN }}" {% if selected_crn==c.CRN %}selected{% endif %}>
+                            CRN {{ c.CRN }} - {{ c.Course_Name }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>

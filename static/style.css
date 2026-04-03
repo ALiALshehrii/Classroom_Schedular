@@ -44,8 +44,8 @@ a {
 
 .dt-navbar .nav-link {
   color: var(--muted) !important;
-  font-size: 0.95rem;
-  padding: 0.4rem 0.75rem !important;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.55rem !important;
   border: 1px solid transparent;
   border-radius: 4px;
 }
@@ -177,6 +177,12 @@ a {
   font-weight: 700;
 }
 
+.chart-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+}
+
 .dt-table {
   margin: 0;
 }
@@ -300,6 +306,18 @@ a {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.heatmap-table th {
+  background: #f7f7f7;
+  font-size: 0.85rem;
+}
+
+.heatmap-cell {
+  font-size: 0.83rem;
+  font-weight: 700;
+  min-width: 72px;
+  white-space: nowrap;
 }
 
 .dt-footer {

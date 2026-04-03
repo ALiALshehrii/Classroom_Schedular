@@ -5,13 +5,16 @@
 <div class="page-wrapper">
     <div class="page-header">
         <h1>Recommendations</h1>
-        <p>Prototype suggestions for better room assignments.</p>
+        <p>Optimization Twin: prescriptive moves for overcrowded classes.</p>
     </div>
 
     <div class="conflict-card mb-4">
-        <div style="font-weight:700;margin-bottom:0.35rem;">How recommendations work</div>
+        <div style="font-weight:700;margin-bottom:0.35rem;">Optimization Twin Summary</div>
         <div class="muted-label">
-            The system looks for a free room of the same type with enough capacity at the same day and time.
+            If all {{ impact.applied_recommendations }} actionable recommendations are applied, overall utilization changes from
+            <strong>{{ impact.current_avg_utilization }}%</strong> to
+            <strong>{{ impact.projected_avg_utilization }}%</strong>, and
+            <strong>{{ impact.sections_resolved }}</strong> overcrowded sections are resolved.
         </div>
     </div>
 
@@ -39,7 +42,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table dt-table mb-0">
+            <table class="table table-striped dt-table mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -57,36 +60,25 @@
                 </thead>
                 <tbody>
                     {% for rec in recommendations %}
-                    <tr>
+                    <tr class="{% if rec.suggested_room == 'No alternative available' %}table-warning{% else %}table-success{% endif %}">
                         <td>{{ loop.index }}</td>
                         <td>{{ rec.crn }}</td>
                         <td style="max-width:180px;font-size:0.87rem;">{{ rec.course_name }}</td>
-
                         <td>
                             <span class="muted-label">{{ rec.day }}</span><br>
                             <span style="font-family:monospace;font-weight:700;">{{ rec.time }}</span>
                         </td>
-
                         <td>{{ rec.current_room }}</td>
-
-                        <td>
-                            {% if rec.suggested_room != 'No alternative available' %}
-                            {{ rec.suggested_room }}
-                            {% else %}
-                            {{ rec.suggested_room }}
-                            {% endif %}
-                        </td>
-
+                        <td>{{ rec.suggested_room }}</td>
                         <td>{{ rec.current_cap }}</td>
                         <td>{{ rec.suggested_cap }}</td>
                         <td>{{ rec.enrolled }}</td>
                         <td>{{ rec.room_type }}</td>
-
                         <td>
                             {% if rec.suggested_room != 'No alternative available' %}
                             <span class="status-badge">Available</span>
                             {% else %}
-                            <span class="status-badge">Not Found</span>
+                            <span class="status-badge">Manual action needed</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -98,8 +90,8 @@
     {% else %}
     <div class="dt-table-wrapper">
         <div class="empty-state" style="padding:3rem;">
-            <h5>No Overcrowded Sections!</h5>
-            <p>All course sections are within normal capacity limits.</p>
+            <h5>No Overcrowded Sections</h5>
+            <p>All sections are currently within room capacity limits.</p>
         </div>
     </div>
     {% endif %}

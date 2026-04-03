@@ -5,40 +5,29 @@
 <div class="page-wrapper">
     <div class="page-header">
         <h1>Dashboard</h1>
-        <p>Prototype overview of rooms, sections, and occupancy.</p>
+        <p>Live digital twin overview with occupancy, issues, and heatmaps.</p>
     </div>
 
+    <div class="section-header">Building Overview</div>
     <div class="prototype-grid mb-4">
-        <div class="kpi-card">
-            <div>
-                <div class="kpi-value">{{ kpis.total_rooms }}</div>
-                <div class="kpi-label">Total Rooms</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div>
-                <div class="kpi-value">{{ kpis.total_sections }}</div>
-                <div class="kpi-label">Total Classes</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div>
-                <div class="kpi-value">{{ kpis.overcrowded }}</div>
-                <div class="kpi-label">Overcrowded</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div>
-                <div class="kpi-value">{{ kpis.underutilized }}</div>
-                <div class="kpi-label">Underutilized</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div>
-                <div class="kpi-value">{{ kpis.avg_occupancy }}%</div>
-                <div class="kpi-label">Avg Occupancy</div>
-            </div>
-        </div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.total_rooms }}</div><div class="kpi-label">Total Rooms</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.lecture_halls }}</div><div class="kpi-label">Lecture Halls</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.computer_labs }}</div><div class="kpi-label">Computer Labs</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.total_sections }}</div><div class="kpi-label">Total Sections</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.active_slots }}</div><div class="kpi-label">Active Slots</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.empty_slots }}</div><div class="kpi-label">Empty Slots</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ overview.overall_utilization }}%</div><div class="kpi-label">Overall Utilization</div></div>
+    </div>
+
+    <div class="section-header">Problem Summary</div>
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card"><div class="kpi-value">{{ problems.overcrowded_sections }}</div><div class="kpi-label">Overcrowded</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.underutilized_sections }}</div><div class="kpi-label">Underutilized</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.double_booked_slots }}</div><div class="kpi-label">Double Booked</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.most_overcrowded_room }}</div><div class="kpi-label">Most Overcrowded Room</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.most_underused_room }}</div><div class="kpi-label">Most Underused Room</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.peak_hour }}</div><div class="kpi-label">Peak Hour</div></div>
+        <div class="kpi-card"><div class="kpi-value">{{ problems.quietest_hour }}</div><div class="kpi-label">Quietest Hour</div></div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -58,6 +47,66 @@
         </div>
     </div>
 
+    <div class="chart-card mb-4">
+        <div class="chart-title">Heatmap 1: Room x Time Occupancy</div>
+        <div class="table-responsive">
+            <table class="table table-bordered heatmap-table align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Room (Floor)</th>
+                        {% for t in room_heatmap.times %}
+                        <th>{{ t }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in room_heatmap.rows %}
+                    <tr>
+                        <th class="text-start">Room {{ row.room_id }} (F{{ row.floor }})</th>
+                        {% for cell in row.cells %}
+                        <td class="heatmap-cell"
+                            style="background-color: {{ cell.color }};"
+                            title="{{ cell.tooltip }}">
+                            {{ cell.value }}%
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="chart-card mb-4">
+        <div class="chart-title">Heatmap 2: Building Traffic by Floor x Time</div>
+        <div class="table-responsive">
+            <table class="table table-bordered heatmap-table align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Floor</th>
+                        {% for t in floor_heatmap.times %}
+                        <th>{{ t }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in floor_heatmap.rows %}
+                    <tr>
+                        <th class="text-start">Floor {{ row.floor }}</th>
+                        {% for cell in row.cells %}
+                        <td class="heatmap-cell"
+                            style="background-color: {{ cell.color }};"
+                            title="{{ cell.tooltip }}">
+                            {{ cell.students }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="row g-3">
         <div class="col-12">
             <div class="chart-card">
@@ -65,13 +114,14 @@
                 <div class="d-flex flex-wrap gap-3">
                     <a href="{{ url_for('conflicts_view') }}" class="btn btn-dt-primary">View Conflicts</a>
                     <a href="{{ url_for('recommendations_view') }}" class="btn btn-dt-secondary">Recommendations</a>
-                    <a href="{{ url_for('simulation_view') }}" class="btn btn-dt-secondary">Run Simulation</a>
-                    <a href="{{ url_for('schedule_view') }}" class="btn btn-dt-secondary">View Schedule</a>
+                    <a href="{{ url_for('simulation_view') }}" class="btn btn-dt-secondary">Simulation Twin</a>
+                    <a href="{{ url_for('schedule_assistant_view') }}" class="btn btn-dt-secondary">Schedule Assistant</a>
+                    <a href="{{ url_for('analytics_view') }}" class="btn btn-dt-secondary">Analytics</a>
+                    <a href="{{ url_for('heatmap_view') }}" class="btn btn-dt-secondary">Heatmap Page</a>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 {% endblock %}
 
@@ -82,7 +132,7 @@
     Chart.defaults.borderColor = 'rgba(0,0,0,0.08)';
 
     const barLabels = {{ bar_chart.labels | tojson }};
-    const barData = {{ bar_chart.data   | tojson }};
+    const barData = {{ bar_chart.data | tojson }};
     const barColors = barData.map(v => {
         if (v > 100) return '#d9534f';
         if (v < 40) return '#f0ad4e';
@@ -100,7 +150,7 @@
                 borderColor: barColors,
                 borderWidth: 1,
                 borderRadius: 2,
-                borderSkipped: false,
+                borderSkipped: false
             }]
         },
         options: {
@@ -111,7 +161,8 @@
             },
             scales: {
                 y: {
-                    beginAtZero: true, max: 140,
+                    beginAtZero: true,
+                    max: 140,
                     ticks: { callback: v => v + '%' },
                     grid: { color: 'rgba(0,0,0,0.08)' }
                 },
@@ -121,7 +172,6 @@
     });
 
     const pieData = {{ pie_chart | tojson }};
-
     new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
         data: {
@@ -130,7 +180,7 @@
                 data: [pieData.Normal, pieData.Overcrowded, pieData.Underutilized],
                 backgroundColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
                 borderColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
-                borderWidth: 1,
+                borderWidth: 1
             }]
         },
         options: {

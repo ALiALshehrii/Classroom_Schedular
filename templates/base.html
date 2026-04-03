@@ -55,6 +55,22 @@
             <a class="nav-link {% if request.endpoint == 'recommendations_view' %}active{% endif %}"
               href="{{ url_for('recommendations_view') }}">Recommendations</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'schedule_assistant_view' %}active{% endif %}"
+              href="{{ url_for('schedule_assistant_view') }}">Schedule Assistant</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'heatmap_view' %}active{% endif %}"
+              href="{{ url_for('heatmap_view') }}">Heatmap</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'analytics_view' %}active{% endif %}"
+              href="{{ url_for('analytics_view') }}">Analytics</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'about_twin_view' %}active{% endif %}"
+              href="{{ url_for('about_twin_view') }}">About Twin</a>
+          </li>
         </ul>
       </div>
     </div>
