@@ -154,11 +154,15 @@ def simulation_view():
 @app.route("/recommendations")
 def recommendations_view():
     rooms, schedule, twin_state = get_data()
-    recs = analyzer.generate_recommendations(schedule, rooms)
-    impact = analyzer.calculate_optimization_impact(recs, twin_state, rooms)
+    overcrowded_recommendations = analyzer.generate_recommendations(schedule, rooms)
+    underutilized_recommendations = analyzer.generate_underutilized_recommendations(schedule, rooms)
+    conflict_recommendations = analyzer.generate_conflict_recommendations(schedule, rooms)
+    impact = analyzer.calculate_optimization_impact(overcrowded_recommendations, twin_state, rooms)
     return render_template(
         "recommendations.html",
-        recommendations=recs,
+        overcrowded_recommendations=overcrowded_recommendations,
+        underutilized_recommendations=underutilized_recommendations,
+        conflict_recommendations=conflict_recommendations,
         impact=impact,
     )
 

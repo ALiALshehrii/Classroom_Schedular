@@ -16,7 +16,8 @@
                     <select name="instructor" class="form-select">
                         <option value="">Any</option>
                         {% for name in instructors %}
-                        <option value="{{ name }}" {% if selected_instructor == name %}selected{% endif %}>{{ name }}</option>
+                        <option value="{{ name }}" {% if selected_instructor==name %}selected{% endif %}>{{ name }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -24,29 +25,32 @@
                     <label class="form-label">Preferred Time</label>
                     <select name="preferred_time" class="form-select">
                         {% for t in time_options %}
-                        <option value="{{ t }}" {% if selected_time == t %}selected{% endif %}>{{ t }}</option>
+                        <option value="{{ t }}" {% if selected_time==t %}selected{% endif %}>{{ t }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Preferred Room</label>
                     <select name="preferred_room" class="form-select">
-                        <option value="Any" {% if selected_room == 'Any' %}selected{% endif %}>Any</option>
+                        <option value="Any" {% if selected_room=='Any' %}selected{% endif %}>Any</option>
                         {% for room in room_ids %}
-                        <option value="{{ room }}" {% if selected_room == room %}selected{% endif %}>{{ room }}</option>
+                        <option value="{{ room }}" {% if selected_room==room %}selected{% endif %}>{{ room }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Room Type Needed</label>
                     <select name="room_type" class="form-select" required>
-                        <option value="Lecture Hall" {% if selected_room_type == 'Lecture Hall' %}selected{% endif %}>Lecture Hall</option>
-                        <option value="Computer Lab" {% if selected_room_type == 'Computer Lab' %}selected{% endif %}>Computer Lab</option>
+                        <option value="Lecture Hall" {% if selected_room_type=='Lecture Hall' %}selected{% endif %}>
+                            Lecture Hall</option>
+                        <option value="Computer Lab" {% if selected_room_type=='Computer Lab' %}selected{% endif %}>
+                            Computer Lab</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of Students</label>
-                    <input type="number" class="form-control" name="num_students" min="1" required value="{{ selected_students }}">
+                    <input type="number" class="form-control" name="num_students" min="1" required
+                        value="{{ selected_students }}">
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-dt-primary w-100">Find Best Slots</button>

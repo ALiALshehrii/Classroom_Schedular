@@ -276,7 +276,10 @@ def generate_recommendations(schedule: pd.DataFrame, rooms: pd.DataFrame) -> lis
         time = section["Time"]
         enrolled = int(section["Enrolled"])
         room_type = section["Room_Type"]
-        current_room = section["Room_ID"]
+        current_room = str(section["Room_ID"])
+        current_cap = int(section["Capacity"])
+        overflow = max(enrolled - current_cap, 0)
+        current_util_pct = round((enrolled / current_cap) * 100, 1) if current_cap else 0.0
 
         candidates = rooms[
             (rooms["Type"] == room_type) &
@@ -295,32 +298,227 @@ def generate_recommendations(schedule: pd.DataFrame, rooms: pd.DataFrame) -> lis
 
         if not free_candidates.empty:
             best = free_candidates.iloc[0]
+            suggested_room = str(best["Room_ID"])
+            suggested_cap = int(best["Capacity"])
+            suggested_util_pct = round((enrolled / suggested_cap) * 100, 1) if suggested_cap else 0.0
             recommendations.append({
                 "crn": str(section["CRN"]),
                 "course_name": section["Course_Name"],
+                "instructor": section["Instructor"],
                 "current_room": current_room,
-                "suggested_room": str(best["Room_ID"]),
-                "current_cap": int(section["Capacity"]),
-                "suggested_cap": int(best["Capacity"]),
+                "suggested_room": suggested_room,
+                "current_cap": current_cap,
+                "suggested_cap": suggested_cap,
                 "enrolled": enrolled,
                 "room_type": room_type,
                 "day": day,
                 "time": time,
+                "overflow": overflow,
+                "current_util_pct": current_util_pct,
+                "suggested_util_pct": suggested_util_pct,
+                "seat_gain": suggested_cap - current_cap,
+                "actionable": True,
+                "recommendation_status": "Actionable",
+                "recommendation_reason": "Alternative room available",
             })
         else:
             recommendations.append({
                 "crn": str(section["CRN"]),
                 "course_name": section["Course_Name"],
+                "instructor": section["Instructor"],
                 "current_room": current_room,
                 "suggested_room": "No alternative available",
-                "current_cap": int(section["Capacity"]),
+                "current_cap": current_cap,
                 "suggested_cap": "-",
                 "enrolled": enrolled,
                 "room_type": room_type,
                 "day": day,
                 "time": time,
+                "overflow": overflow,
+                "current_util_pct": current_util_pct,
+                "suggested_util_pct": "-",
+                "seat_gain": "-",
+                "actionable": False,
+                "recommendation_status": "No Match",
+                "recommendation_reason": "No free same-type room can hold enrollment at this day/time",
             })
 
+    recommendations.sort(
+        key=lambda r: (
+            not r.get("actionable", False),
+            r.get("day", ""),
+            r.get("time", ""),
+            r.get("course_name", ""),
+        )
+    )
+    return recommendations
+
+
+def generate_underutilized_recommendations(schedule: pd.DataFrame, rooms: pd.DataFrame) -> list:
+    """
+    For each underutilized section, suggest a smaller same-type room:
+      - Capacity >= Enrolled
+      - Capacity < current room capacity
+      - Not occupied at same Day + Time
+      - Prefer smallest fitting room
+    """
+    recommendations = []
+    underutilized = schedule[schedule["Status"] == "Underutilized"]
+
+    for _, section in underutilized.iterrows():
+        day = section["Day"]
+        time = section["Time"]
+        enrolled = int(section["Enrolled"])
+        room_type = section["Room_Type"]
+        current_room = str(section["Room_ID"])
+        current_cap = int(section["Capacity"])
+        current_util_pct = round((enrolled / current_cap) * 100, 1) if current_cap else 0.0
+
+        candidates = rooms[
+            (rooms["Type"] == room_type) &
+            (rooms["Capacity"] >= enrolled) &
+            (rooms["Capacity"] < current_cap) &
+            (rooms["Room_ID"] != current_room)
+        ].copy()
+
+        busy_rooms = schedule[
+            (schedule["Day"] == day) &
+            (schedule["Time"] == time)
+        ]["Room_ID"].tolist()
+
+        free_candidates = candidates[
+            ~candidates["Room_ID"].isin(busy_rooms)
+        ].sort_values("Capacity")
+
+        if not free_candidates.empty:
+            best = free_candidates.iloc[0]
+            suggested_room = str(best["Room_ID"])
+            suggested_cap = int(best["Capacity"])
+            suggested_util_pct = round((enrolled / suggested_cap) * 100, 1) if suggested_cap else 0.0
+            recommendations.append({
+                "crn": str(section["CRN"]),
+                "course_name": section["Course_Name"],
+                "day": day,
+                "time": time,
+                "current_room": current_room,
+                "current_cap": current_cap,
+                "enrolled": enrolled,
+                "current_util_pct": current_util_pct,
+                "suggested_room": suggested_room,
+                "suggested_cap": suggested_cap,
+                "suggested_util_pct": suggested_util_pct,
+                "actionable": True,
+                "action": "Move to smaller room",
+            })
+        else:
+            recommendations.append({
+                "crn": str(section["CRN"]),
+                "course_name": section["Course_Name"],
+                "day": day,
+                "time": time,
+                "current_room": current_room,
+                "current_cap": current_cap,
+                "enrolled": enrolled,
+                "current_util_pct": current_util_pct,
+                "suggested_room": "No suitable smaller room",
+                "suggested_cap": "-",
+                "suggested_util_pct": "-",
+                "actionable": False,
+                "action": "Keep room (no better option)",
+            })
+
+    recommendations.sort(
+        key=lambda r: (
+            not r.get("actionable", False),
+            r.get("day", ""),
+            r.get("time", ""),
+            r.get("course_name", ""),
+        )
+    )
+    return recommendations
+
+
+def generate_conflict_recommendations(schedule: pd.DataFrame, rooms: pd.DataFrame) -> list:
+    """
+    For each double-booked slot, suggest alternative rooms for extra sections.
+    First section keeps current room; others try to move.
+    """
+    recommendations = []
+    grouped = schedule.groupby(["Room_ID", "Day", "Time"])
+
+    for (room_id, day, time), group in grouped:
+        if len(group) <= 1:
+            continue
+
+        ordered = group.sort_values("CRN")
+        keep_crn = str(ordered.iloc[0]["CRN"])
+
+        for _, section in ordered.iterrows():
+            crn = str(section["CRN"])
+            enrolled = int(section["Enrolled"])
+            room_type = section["Room_Type"]
+            current_room = str(section["Room_ID"])
+
+            if crn == keep_crn:
+                recommendations.append({
+                    "crn": crn,
+                    "course_name": section["Course_Name"],
+                    "day": day,
+                    "time": time,
+                    "current_room": current_room,
+                    "suggested_room": current_room,
+                    "actionable": False,
+                    "action": "Keep in current room",
+                })
+                continue
+
+            candidates = rooms[
+                (rooms["Type"] == room_type) &
+                (rooms["Capacity"] >= enrolled) &
+                (rooms["Room_ID"] != current_room)
+            ].copy()
+
+            busy_rooms = schedule[
+                (schedule["Day"] == day) &
+                (schedule["Time"] == time)
+            ]["Room_ID"].tolist()
+
+            free_candidates = candidates[
+                ~candidates["Room_ID"].isin(busy_rooms)
+            ].sort_values("Capacity")
+
+            if not free_candidates.empty:
+                best = free_candidates.iloc[0]
+                recommendations.append({
+                    "crn": crn,
+                    "course_name": section["Course_Name"],
+                    "day": day,
+                    "time": time,
+                    "current_room": current_room,
+                    "suggested_room": str(best["Room_ID"]),
+                    "actionable": True,
+                    "action": "Move to alternative room",
+                })
+            else:
+                recommendations.append({
+                    "crn": crn,
+                    "course_name": section["Course_Name"],
+                    "day": day,
+                    "time": time,
+                    "current_room": current_room,
+                    "suggested_room": "No free room",
+                    "actionable": False,
+                    "action": "Manual reschedule needed",
+                })
+
+    recommendations.sort(
+        key=lambda r: (
+            r.get("day", ""),
+            r.get("time", ""),
+            r.get("current_room", ""),
+            r.get("crn", ""),
+        )
+    )
     return recommendations
 
 
@@ -503,17 +701,44 @@ def find_available_slots(
 
 # ─── Heatmaps ─────────────────────────────────────────────────────────────────
 
-def occupancy_to_color(pct: float) -> str:
-    """Map occupancy percent to heatmap color."""
+def occupancy_to_color_light(pct: float) -> str:
+    """Map occupancy percent to heatmap color for light theme."""
     if pct == 0:
-        return "#f8f9fa"
+        return "#f8fafc"
     if pct < 40:
-        return "#cce5ff"
+        return "#dbeafe"
     if pct < 80:
-        return "#4a90d9"
+        return "#93c5fd"
     if pct < 100:
-        return "#fd7e14"
-    return "#dc3545"
+        return "#fdba74"
+    return "#fca5a5"
+
+
+def occupancy_to_color_dark(pct: float) -> str:
+    """Map occupancy percent to heatmap color for dark theme."""
+    if pct == 0:
+        return "#0f172a"
+    if pct < 40:
+        return "#0f3d5e"
+    if pct < 80:
+        return "#0d6e9f"
+    if pct < 100:
+        return "#b45309"
+    return "#b91c1c"
+
+
+def occupancy_to_text_color_light(pct: float) -> str:
+    """Readable labels for light theme heatmap backgrounds."""
+    if pct < 80:
+        return "#0f172a"
+    return "#111827"
+
+
+def occupancy_to_text_color_dark(pct: float) -> str:
+    """Readable labels for dark theme heatmap backgrounds."""
+    if pct < 5:
+        return "#cbd5e1"
+    return "#f8fafc"
 
 
 def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -> dict:
@@ -555,7 +780,10 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
             row_cells.append({
                 "time": time,
                 "value": avg_pct,
-                "color": occupancy_to_color(avg_pct),
+                "color": occupancy_to_color_light(avg_pct),
+                "text_color": occupancy_to_text_color_light(avg_pct),
+                "dark_color": occupancy_to_color_dark(avg_pct),
+                "dark_text_color": occupancy_to_text_color_dark(avg_pct),
                 "tooltip": f"Room {room_id} at {time} | " + " || ".join(tooltip_parts),
             })
 
@@ -612,7 +840,10 @@ def build_floor_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) 
                 "time": time,
                 "students": avg_students,
                 "occupancy_pct": occ_pct,
-                "color": occupancy_to_color(occ_pct),
+                "color": occupancy_to_color_light(occ_pct),
+                "text_color": occupancy_to_text_color_light(occ_pct),
+                "dark_color": occupancy_to_color_dark(occ_pct),
+                "dark_text_color": occupancy_to_text_color_dark(occ_pct),
                 "tooltip": (
                     f"Floor {floor} at {time}: {avg_students} students avg, "
                     f"{occ_pct}% of floor capacity | " + " || ".join(tooltip_parts)
