@@ -44,13 +44,7 @@
                             <div class="text-white-50" style="font-size:0.7rem; font-weight: 700;">ACTIVE</div>
                         </div>
                     </div>
-                    <div class="col-3">
-                        <div class="p-2 border rounded metric-card-soft text-center h-100 d-flex flex-column justify-content-center">
-                            <div class="fs-4 fw-bold metric-value-warning">{{ overview.empty_slots }}</div>
-                            <div class="text-muted" style="font-size:0.7rem; font-weight: 700;">EMPTY</div>
-                        </div>
-                    </div>
-                    <div class="col-3">
+                    <div class="col-6">
                         <div class="p-2 border rounded metric-card-info text-center h-100 d-flex flex-column justify-content-center">
                             <div class="fs-4 fw-bold metric-value-info">{{ overview.overall_utilization }}%</div>
                             <div class="metric-label-info" style="font-size:0.7rem; font-weight: 700;">UTILIZATION</div>
@@ -144,7 +138,7 @@
                 <tbody>
                     {% for row in room_heatmap.rows %}
                     <tr>
-                        <th class="text-start">Room {{ row.room_id }} (F{{ row.floor }})</th>
+                        <th class="text-start">Room {{ row.room_id }} ({{ row.floor_label }})</th>
                         {% for cell in row.cells %}
                         <td class="heatmap-cell"
                             style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};"
@@ -174,7 +168,7 @@
                 <tbody>
                     {% for row in floor_heatmap.rows %}
                     <tr>
-                        <th class="text-start">Floor {{ row.floor }}</th>
+                        <th class="text-start">{{ row.floor_label }}</th>
                         {% for cell in row.cells %}
                         <td class="heatmap-cell"
                             style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};"

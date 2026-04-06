@@ -7,6 +7,7 @@ Handles: data loading, occupancy calculation, conflict detection,
 """
 
 import os
+from datetime import datetime
 from typing import Optional
 
 import pandas as pd
@@ -38,6 +39,8 @@ def load_schedule() -> pd.DataFrame:
     df = pd.read_csv(SCHEDULE_CSV)
     df["Room_ID"] = df["Room_ID"].astype(str)
     df["CRN"] = df["CRN"].astype(str)
+    df["Day"] = df["Day"].astype(str).str.strip()
+    df["Time"] = df["Time"].astype(str).str.strip()
 
     def calc_status(row):
         if row["Enrolled"] > row["Capacity"]:
@@ -57,17 +60,64 @@ def _slot_key(room_id: str, day: str, time: str) -> str:
     return f"{room_id}|{day}|{time}"
 
 
+def _get_schedule_dimensions(schedule_df: pd.DataFrame) -> tuple[list[str], list[str]]:
+    """
+    Return day and time axes derived from schedule data.
+    Falls back to defaults when schedule is empty.
+    """
+    if schedule_df.empty:
+        return DAY_OPTIONS, TIME_SLOTS
+
+    days = (
+        schedule_df["Day"]
+        .astype(str)
+        .str.strip()
+        .replace("", pd.NA)
+        .dropna()
+        .drop_duplicates()
+        .tolist()
+    )
+    times_raw = (
+        schedule_df["Time"]
+        .astype(str)
+        .str.strip()
+        .replace("", pd.NA)
+        .dropna()
+        .drop_duplicates()
+        .tolist()
+    )
+
+    if not days:
+        days = DAY_OPTIONS
+    if not times_raw:
+        return days, TIME_SLOTS
+
+    def _time_sort_key(value: str) -> tuple[int, int, str]:
+        formats = ("%H:%M", "%H:%M:%S", "%I:%M %p", "%I:%M%p")
+        for fmt in formats:
+            try:
+                parsed = datetime.strptime(value, fmt)
+                return (0, parsed.hour * 60 + parsed.minute, value)
+            except ValueError:
+                continue
+        return (1, 0, value)
+
+    times = sorted(times_raw, key=_time_sort_key)
+    return days, times
+
+
 def build_twin_state(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -> dict:
     """
     Build a full in-memory mirror of every (Room_ID, Day, Time) slot.
     Each slot stores occupancy and list of assigned sections.
     """
     slots = {}
+    day_options, time_slots = _get_schedule_dimensions(schedule_df)
 
     for _, room in rooms_df.iterrows():
         room_id = str(room["Room_ID"])
-        for day in DAY_OPTIONS:
-            for time in TIME_SLOTS:
+        for day in day_options:
+            for time in time_slots:
                 key = _slot_key(room_id, day, time)
                 slots[key] = {
                     "room_id": room_id,
@@ -747,15 +797,30 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
     Cell value is occupancy % averaged across day patterns.
     """
     room_map = rooms_df.set_index("Room_ID").to_dict(orient="index")
+    day_options, time_slots = _get_schedule_dimensions(schedule_df)
     rows = []
 
-    for _, room in rooms_df.sort_values(["Floor", "Room_ID"]).iterrows():
-        room_id = str(room["Room_ID"])
+    rooms_sorted = [
+        str(r["Room_ID"])
+        for _, r in rooms_df.sort_values(["Floor", "Room_ID"]).iterrows()
+    ]
+    scheduled_room_ids = (
+        schedule_df["Room_ID"].astype(str).drop_duplicates().tolist()
+        if not schedule_df.empty else []
+    )
+    extra_room_ids = sorted([rid for rid in scheduled_room_ids if rid not in room_map])
+    all_room_ids = rooms_sorted + extra_room_ids
+
+    for room_id in all_room_ids:
+        room_info = room_map.get(room_id)
+        floor_value = int(room_info["Floor"]) if room_info is not None else None
+        floor_label = f"F{floor_value}" if floor_value is not None else "Unmapped"
+        room_capacity = int(room_info["Capacity"]) if room_info is not None else None
         row_cells = []
-        for time in TIME_SLOTS:
+        for time in time_slots:
             day_pcts = []
             tooltip_parts = []
-            for day in DAY_OPTIONS:
+            for day in day_options:
                 slot_df = schedule_df[
                     (schedule_df["Room_ID"] == room_id) &
                     (schedule_df["Time"] == time) &
@@ -767,7 +832,10 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
                     tooltip_parts.append(f"{day}: Empty")
                 else:
                     total_enrolled = int(slot_df["Enrolled"].sum())
-                    cap = int(room_map[room_id]["Capacity"])
+                    if room_capacity is not None:
+                        cap = room_capacity
+                    else:
+                        cap = int(slot_df["Capacity"].max()) if not slot_df["Capacity"].empty else 0
                     pct = round((total_enrolled / cap) * 100, 1) if cap else 0.0
                     day_pcts.append(pct)
                     details = " | ".join(
@@ -776,7 +844,7 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
                     )
                     tooltip_parts.append(f"{day}: {details}")
 
-            avg_pct = round(sum(day_pcts) / len(DAY_OPTIONS), 1)
+            avg_pct = round(sum(day_pcts) / len(day_options), 1)
             row_cells.append({
                 "time": time,
                 "value": avg_pct,
@@ -789,11 +857,12 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
 
         rows.append({
             "room_id": room_id,
-            "floor": int(room["Floor"]),
+            "floor": floor_value,
+            "floor_label": floor_label,
             "cells": row_cells,
         })
 
-    return {"times": TIME_SLOTS, "rows": rows}
+    return {"times": time_slots, "rows": rows}
 
 
 def build_floor_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -> dict:
@@ -804,17 +873,40 @@ def build_floor_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) 
     """
     room_floor = rooms_df.set_index("Room_ID")["Floor"].to_dict()
     floor_capacity = rooms_df.groupby("Floor")["Capacity"].sum().to_dict()
-
-    rows = []
-    for floor in sorted(rooms_df["Floor"].unique().tolist()):
-        floor_cells = []
-        floor_room_ids = set(
+    day_options, time_slots = _get_schedule_dimensions(schedule_df)
+    rooms_by_floor: dict[object, set[str]] = {
+        int(floor): set(
             rooms_df[rooms_df["Floor"] == floor]["Room_ID"].astype(str).tolist()
         )
-        for time in TIME_SLOTS:
+        for floor in sorted(rooms_df["Floor"].unique().tolist())
+    }
+    scheduled_room_ids = (
+        schedule_df["Room_ID"].astype(str).drop_duplicates().tolist()
+        if not schedule_df.empty else []
+    )
+    unmapped_rooms = {rid for rid in scheduled_room_ids if rid not in room_floor}
+    if unmapped_rooms:
+        rooms_by_floor["Unmapped"] = unmapped_rooms
+
+    schedule_capacity_by_room = (
+        schedule_df.groupby("Room_ID")["Capacity"].max().to_dict()
+        if not schedule_df.empty else {}
+    )
+
+    rows = []
+    floor_keys = list(rooms_by_floor.keys())
+    for floor in floor_keys:
+        floor_cells = []
+        floor_room_ids = rooms_by_floor[floor]
+        floor_label = f"Floor {int(floor)}" if floor != "Unmapped" else "Floor Unmapped"
+        if floor == "Unmapped":
+            cap = int(sum(schedule_capacity_by_room.get(room_id, 0) for room_id in floor_room_ids))
+        else:
+            cap = int(floor_capacity.get(floor, 0))
+        for time in time_slots:
             day_students = []
             tooltip_parts = []
-            for day in DAY_OPTIONS:
+            for day in day_options:
                 slot_df = schedule_df[
                     (schedule_df["Room_ID"].isin(floor_room_ids)) &
                     (schedule_df["Time"] == time) &
@@ -832,8 +924,7 @@ def build_floor_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) 
                     )
                     tooltip_parts.append(f"{day}: {total_students} students [{courses}]")
 
-            avg_students = round(sum(day_students) / len(DAY_OPTIONS), 1)
-            cap = int(floor_capacity.get(floor, 0))
+            avg_students = round(sum(day_students) / len(day_options), 1)
             occ_pct = round((avg_students / cap) * 100, 1) if cap else 0.0
 
             floor_cells.append({
@@ -845,14 +936,18 @@ def build_floor_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) 
                 "dark_color": occupancy_to_color_dark(occ_pct),
                 "dark_text_color": occupancy_to_text_color_dark(occ_pct),
                 "tooltip": (
-                    f"Floor {floor} at {time}: {avg_students} students avg, "
+                    f"{floor_label} at {time}: {avg_students} students avg, "
                     f"{occ_pct}% of floor capacity | " + " || ".join(tooltip_parts)
                 ),
             })
 
-        rows.append({"floor": int(floor), "cells": floor_cells})
+        rows.append({
+            "floor": floor if floor == "Unmapped" else int(floor),
+            "floor_label": floor_label,
+            "cells": floor_cells,
+        })
 
-    return {"times": TIME_SLOTS, "rows": rows}
+    return {"times": time_slots, "rows": rows}
 
 
 # ─── Analytics ────────────────────────────────────────────────────────────────
@@ -863,12 +958,12 @@ def get_building_overview_kpis(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame
     computer_labs = int((rooms_df["Type"] == "Computer Lab").sum())
     total_sections = int(len(schedule_df))
 
+    day_options, time_slots = _get_schedule_dimensions(schedule_df)
     active_slots = int(
         schedule_df[["Room_ID", "Day", "Time"]].drop_duplicates().shape[0]
     )
-    total_possible_slots = int(total_rooms * len(DAY_OPTIONS) * len(TIME_SLOTS))
+    total_possible_slots = int(total_rooms * len(day_options) * len(time_slots))
     empty_slots = int(total_possible_slots - active_slots)
-
     overall_utilization = round(
         (schedule_df["Enrolled"].sum() / schedule_df["Capacity"].sum()) * 100, 1
     ) if schedule_df["Capacity"].sum() else 0.0

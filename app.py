@@ -5,11 +5,17 @@ Flask entry point for the Digital Twin Classroom Scheduler.
 Defines all routes and passes data to Jinja2 templates.
 """
 
-from flask import Flask, render_template, request
+import os
+
+import pandas as pd
+from flask import Flask, flash, redirect, render_template, request, url_for
 
 import analyzer
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "classroom-scheduler-dev-secret")
+SCHEDULE_COLUMNS = pd.read_csv(analyzer.SCHEDULE_CSV, nrows=0).columns.tolist()
+ROOMS_COLUMNS = pd.read_csv(analyzer.ROOMS_CSV, nrows=0).columns.tolist()
 
 
 def get_data():
@@ -17,6 +23,41 @@ def get_data():
     schedule = analyzer.load_schedule()
     twin_state = analyzer.build_twin_state(rooms, schedule)
     return rooms, schedule, twin_state
+
+
+@app.route("/import-schedule-csv", methods=["POST"])
+def import_schedule_csv():
+    schedule_file = request.files.get("schedule_csv")
+    rooms_file = request.files.get("rooms_csv")
+    if schedule_file is None or not schedule_file.filename or rooms_file is None or not rooms_file.filename:
+        flash("Please attach both Schedule CSV and Rooms CSV files.", "danger")
+        return redirect(url_for("index"))
+
+    if not schedule_file.filename.lower().endswith(".csv") or not rooms_file.filename.lower().endswith(".csv"):
+        flash("Only CSV files are supported.", "danger")
+        return redirect(url_for("index"))
+
+    try:
+        schedule_df = pd.read_csv(schedule_file)
+        rooms_df = pd.read_csv(rooms_file)
+    except Exception:
+        flash("Could not read one or both uploaded files. Please upload valid CSV files.", "danger")
+        return redirect(url_for("index"))
+
+    if schedule_df.empty or rooms_df.empty:
+        flash("One or both uploaded CSV files are empty.", "danger")
+        return redirect(url_for("index"))
+
+    if schedule_df.columns.tolist() != SCHEDULE_COLUMNS or rooms_df.columns.tolist() != ROOMS_COLUMNS:
+        flash("Import files with the same layout as the existing Schedule and Rooms CSV files.", "danger")
+        return redirect(url_for("index"))
+
+    schedule_df = schedule_df[SCHEDULE_COLUMNS]
+    rooms_df = rooms_df[ROOMS_COLUMNS]
+    schedule_df.to_csv(analyzer.SCHEDULE_CSV, index=False)
+    rooms_df.to_csv(analyzer.ROOMS_CSV, index=False)
+    flash("Files imported successfully. Dashboard and all pages were rebuilt from the new files.", "success")
+    return redirect(url_for("index"))
 
 
 @app.route("/")

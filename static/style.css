@@ -80,6 +80,33 @@ a {
   border-color: transparent;
 }
 
+.nav-import-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.nav-more-btn {
+  padding: 0.22rem 0.55rem;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.nav-panel-links .list-group-item {
+  border: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 85%, #fff);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.nav-panel-links .list-group-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
 .page-wrapper {
   max-width: 1200px;
   margin: 0 auto;

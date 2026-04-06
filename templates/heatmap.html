@@ -23,7 +23,7 @@
                 <tbody>
                     {% for row in room_heatmap.rows %}
                     <tr>
-                        <th class="text-start">Room {{ row.room_id }} (F{{ row.floor }})</th>
+                        <th class="text-start">Room {{ row.room_id }} ({{ row.floor_label }})</th>
                         {% for cell in row.cells %}
                         <td class="heatmap-cell" style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};" title="{{ cell.tooltip }}">
                             {{ cell.value }}%
@@ -51,7 +51,7 @@
                 <tbody>
                     {% for row in floor_heatmap.rows %}
                     <tr>
-                        <th class="text-start">Floor {{ row.floor }}</th>
+                        <th class="text-start">{{ row.floor_label }}</th>
                         {% for cell in row.cells %}
                         <td class="heatmap-cell" style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};" title="{{ cell.tooltip }}">
                             {{ cell.students }}
