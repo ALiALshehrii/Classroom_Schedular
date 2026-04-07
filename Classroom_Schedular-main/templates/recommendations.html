@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Recommendations – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper recommendations-page">
+    <div class="page-header">
+        <h1>Recommendations</h1>
+        <p>Simple actions for overcrowded, underutilized, and conflict cases.</p>
+    </div>
+
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card">
+            <div class="muted-label">Overcrowded</div>
+            <div class="kpi-value recommendations-kpi-value">{{ overcrowded_recommendations | length }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="muted-label">Underutilized</div>
+            <div class="kpi-value recommendations-kpi-value">{{ underutilized_recommendations | length }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="muted-label">Conflicts</div>
+            <div class="kpi-value recommendations-kpi-value">{{ conflict_recommendations | length }}</div>
+        </div>
+    </div>
+
+    <div class="conflict-card mb-4">
+        <div class="recommendations-impact-title">Overcrowded Impact</div>
+        <div class="muted-label">
+            Applying overcrowded actions changes utilization from
+            <strong>{{ impact.current_avg_utilization }}%</strong> to
+            <strong>{{ impact.projected_avg_utilization }}%</strong>,
+            resolving <strong>{{ impact.sections_resolved }}</strong> sections.
+        </div>
+    </div>
+
+    <div class="dt-table-wrapper mb-4">
+        <div class="table-header">
+            <h5 class="table-title">Overcrowded Recommendations</h5>
+            <span class="muted-label">{{ overcrowded_recommendations | length }} rows</span>
+        </div>
+        {% if overcrowded_recommendations %}
+        <div class="table-responsive">
+            <table class="table dt-table mb-0 rec-table">
+                <thead>
+                    <tr>
+                        <th>CRN</th>
+                        <th>Course</th>
+                        <th>Slot</th>
+                        <th>Current</th>
+                        <th>Alt</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in overcrowded_recommendations %}
+                    <tr class="rec-row {% if rec.actionable %}rec-actionable{% else %}rec-blocked{% endif %}">
+                        <td>{{ rec.crn }}</td>
+                        <td>{{ rec.course_name }}</td>
+                        <td>{{ rec.day }} / {{ rec.time }}</td>
+                        <td>R{{ rec.current_room }} ({{ rec.enrolled }}/{{ rec.current_cap }})</td>
+                        <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_cap }}){% else %}-{% endif %}</td>
+                        <td>
+                            {% if rec.actionable %}
+                            <button class="btn btn-sm btn-success" onclick="applyResolution('{{ rec.crn }}', '{{ rec.day }}', '{{ rec.time }}', '{{ rec.suggested_room }}')">Apply Fix</button>
+                            {% else %}
+                            {{ rec.recommendation_reason }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>No overcrowded sections</h5>
+            <p>No actions needed.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="dt-table-wrapper mb-4">
+        <div class="table-header">
+            <h5 class="table-title">Underutilized Recommendations</h5>
+            <span class="muted-label">{{ underutilized_recommendations | length }} rows</span>
+        </div>
+        {% if underutilized_recommendations %}
+        <div class="table-responsive">
+            <table class="table dt-table mb-0 rec-table">
+                <thead>
+                    <tr>
+                        <th>CRN</th>
+                        <th>Course</th>
+                        <th>Slot</th>
+                        <th>Current</th>
+                        <th>Alt</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in underutilized_recommendations %}
+                    <tr class="rec-row {% if rec.actionable %}rec-actionable{% else %}rec-blocked{% endif %}">
+                        <td>{{ rec.crn }}</td>
+                        <td>{{ rec.course_name }}</td>
+                        <td>{{ rec.day }} / {{ rec.time }}</td>
+                        <td>R{{ rec.current_room }} ({{ rec.current_util_pct }}%)</td>
+                        <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_util_pct }}%){% else %}-{% endif %}</td>
+                        <td>
+                            {% if rec.actionable %}
+                            <button class="btn btn-sm btn-success" onclick="applyResolution('{{ rec.crn }}', '{{ rec.day }}', '{{ rec.time }}', '{{ rec.suggested_room }}')">Apply Fix</button>
+                            {% else %}
+                            {{ rec.action }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>No underutilized sections</h5>
+            <p>No actions needed.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="dt-table-wrapper">
+        <div class="table-header">
+            <h5 class="table-title">Conflict Recommendations</h5>
+            <span class="muted-label">{{ conflict_recommendations | length }} rows</span>
+        </div>
+        {% if conflict_recommendations %}
+        <div class="table-responsive">
+            <table class="table dt-table mb-0 rec-table">
+                <thead>
+                    <tr>
+                        <th>CRN</th>
+                        <th>Course</th>
+                        <th>Slot</th>
+                        <th>Current Room</th>
+                        <th>Suggested Room</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in conflict_recommendations %}
+                    <tr class="rec-row {% if rec.actionable %}rec-actionable{% else %}rec-neutral{% endif %}">
+                        <td>{{ rec.crn }}</td>
+                        <td>{{ rec.course_name }}</td>
+                        <td>{{ rec.day }} / {{ rec.time }}</td>
+                        <td>R{{ rec.current_room }}</td>
+                        <td>{% if rec.actionable %}R{{ rec.suggested_room }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if rec.actionable %}
+                            <button class="btn btn-sm btn-success" onclick="applyResolution('{{ rec.crn }}', '{{ rec.day }}', '{{ rec.time }}', '{{ rec.suggested_room }}')">Apply Fix</button>
+                            {% else %}
+                            {{ rec.action }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>No room conflicts</h5>
+            <p>No actions needed.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function applyResolution(crn, day, time, suggestedRoom) {
+    if(confirm("Are you sure you want to apply this recommendation? The class will be moved mapping directly to the CSV.")) {
+        fetch('/api/apply-resolution', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ crn: crn, day: day, time: time, suggested_room: suggestedRoom })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
+            } else {
+                alert("Failed to apply recommendation: " + data.error);
+            }
+        })
+        .catch(err => {
+            alert("Network error occurred.");
+        });
+    }
+}
+</script>
+{% endblock %}

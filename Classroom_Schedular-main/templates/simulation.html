@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Simulation – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Simulation</h1>
+        <p>Prototype tool for checking a room change before making it.</p>
+    </div>
+
+    <div class="sim-form-card">
+        <h5 style="margin-bottom:1rem;font-weight:700;">Simulation Parameters</h5>
+
+        <form method="post" action="{{ url_for('simulation_view') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Select Section (CRN)</label>
+                    <select name="crn" class="form-select" required>
+                        <option value="">-- Select a Section --</option>
+                        {% for c in crns %}
+                        <option value="{{ c.CRN }}" {% if selected_crn==c.CRN %}selected{% endif %}>
+                            CRN {{ c.CRN }} - {{ c.Course_Name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Select Target Room</label>
+                    <select name="room_id" class="form-select" required>
+                        <option value="">-- Select a Room --</option>
+                        {% for r in room_ids %}
+                        <option value="{{ r }}" {% if selected_room==r %}selected{% endif %}>Room {{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-dt-primary w-100" style="height:42px;">Run Simulation</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if error %}
+    <div class="mt-3">
+        <div class="conflict-card">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <div class="sim-result">
+        <div class="chart-card mb-3">
+            <div class="row">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="muted-label">Section (CRN)</div>
+                    <div style="font-weight:700;font-size:1.1rem;">{{ result.crn }}</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="muted-label">Course Name</div>
+                    <div style="font-weight:600;">{{ result.course_name }}</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="muted-label">Instructor</div>
+                    <div style="font-weight:600;">{{ result.instructor }}</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="muted-label">Day / Time</div>
+                    <div style="font-weight:600;">{{ result.day }} - {{ result.time }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <div class="compare-card">
+                    <div class="compare-label">Before Move</div>
+                    <div class="compare-room">{{ result.old_room }}</div>
+                    <div class="compare-meta">Type: {{ result.old_room_type }}</div>
+                    <div class="compare-meta">Enrolled: <strong>{{ result.enrolled }}</strong></div>
+                    <div class="compare-meta">Capacity: <strong>{{ result.old_capacity }}</strong></div>
+                    <div class="compare-util">{{ result.old_util }}%</div>
+
+                    <div class="util-bar" style="height:10px;margin:0 auto 1rem;max-width:220px;">
+                        <div class="util-bar-inner" style="width:{{ [result.old_util, 100]|min }}%;"></div>
+                    </div>
+
+                    <span class="status-badge">{{ result.old_status }}</span>
+                </div>
+            </div>
+
+            <div class="col-md-2 compare-divider">
+                <span>&rarr;</span>
+            </div>
+
+            <div class="col-md-5">
+                <div class="compare-card">
+                    <div class="compare-label">After Move</div>
+                    <div class="compare-room">{{ result.new_room }}</div>
+                    <div class="compare-meta">Type: <strong>{{ result.new_room_type }}</strong></div>
+                    <div class="compare-meta">Enrolled: <strong>{{ result.enrolled }}</strong></div>
+                    <div class="compare-meta">Capacity: <strong>{{ result.new_capacity }}</strong></div>
+                    <div class="compare-util">{{ result.new_util }}%</div>
+
+                    <div class="util-bar" style="height:10px;margin:0 auto 1rem;max-width:220px;">
+                        <div class="util-bar-inner" style="width:{{ [result.new_util, 100]|min }}%;"></div>
+                    </div>
+
+                    <span class="status-badge">{{ result.new_status }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if result.has_conflict %}
+<div class="sim-status-card conflict">
+    <svg class="sim-status-icon" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="12" stroke="#d9534f" stroke-width="2"/>
+        <line x1="14" y1="8" x2="14" y2="16" stroke="#d9534f" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="14" cy="20" r="1.4" fill="#d9534f"/>
+    </svg>
+    <div>
+        <div class="sim-status-title">Warning: Room {{ result.new_room }} is already booked at this time slot</div>
+        <div class="sim-status-sub">Conflicts with sections: <strong>{{ result.conflict_with | join(', ') }}</strong></div>
+    </div>
+</div>
+{% else %}
+<div class="sim-status-card available">
+    <svg class="sim-status-icon" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="12" stroke="#5cb85c" stroke-width="2"/>
+        <polyline points="8,14 12.5,18.5 20,10" stroke="#5cb85c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+        <div class="sim-status-title">Room {{ result.new_room }} is available at this time slot</div>
+        <div class="sim-status-sub">No conflicts detected — safe to proceed</div>
+    </div>
+</div>
+{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

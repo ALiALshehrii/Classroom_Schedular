@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper dashboard-page">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Dashboard Overview</h1>
+            <p>High-level view of building occupancy and potential problem areas.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('export_csv') }}" class="btn btn-primary" style="background-color: var(--apple-blue); border-color: var(--apple-blue);">
+                Download Core Schedule (CSV)
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Building Overview Column -->
+        <div class="col-lg-6">
+            <div class="panel h-100 d-flex flex-column">
+                <h5 class="fw-bold mb-3 section-header border-0 px-1 py-0" style="font-size: 1.15rem;">Building Overview</h5>
+                <div class="row g-2 flex-grow-1">
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold">{{ overview.total_rooms }}</div>
+                            <div class="text-muted small fw-bold text-uppercase">Total Rooms</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold">{{ overview.lecture_halls }}</div>
+                            <div class="text-muted small fw-bold text-uppercase">Lecture Halls</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold">{{ overview.computer_labs }}</div>
+                            <div class="text-muted small fw-bold text-uppercase">Computer Labs</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 border rounded metric-card-soft text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-4 fw-bold">{{ overview.total_sections }}</div>
+                            <div class="text-muted" style="font-size:0.7rem; font-weight: 700;">SECTIONS</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 border rounded text-center h-100 d-flex flex-column justify-content-center bg-success text-white" style="border-color:#4cae4c!important;">
+                            <div class="fs-4 fw-bold">{{ overview.active_slots }}</div>
+                            <div class="text-white-50" style="font-size:0.7rem; font-weight: 700;">ACTIVE</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded metric-card-info text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-4 fw-bold metric-value-info">{{ overview.overall_utilization }}%</div>
+                            <div class="metric-label-info" style="font-size:0.7rem; font-weight: 700;">UTILIZATION</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem Summary Column -->
+        <div class="col-lg-6">
+            <div class="panel h-100 d-flex flex-column">
+                <h5 class="fw-bold mb-3 section-header border-0 px-1 py-0" style="font-size: 1.15rem;">Problem Summary</h5>
+                <div class="row g-2 flex-grow-1">
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card-danger text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold text-danger">{{ problems.overcrowded_sections }}</div>
+                            <div class="text-danger small fw-bold text-uppercase">Overcrowded</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card-warning text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold metric-value-warning">{{ problems.underutilized_sections }}</div>
+                            <div class="small fw-bold text-uppercase metric-label-warning">Underutilized</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded metric-card-neutral text-center h-100 d-flex flex-column justify-content-center">
+                            <div class="fs-2 fw-bold">{{ problems.double_booked_slots }}</div>
+                            <div class="text-muted small fw-bold text-uppercase">Double Booked</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded d-flex justify-content-between align-items-center h-100 metric-card">
+                            <div class="text-muted small fw-bold text-uppercase">Most Overcrowded</div>
+                            <div class="fw-bold text-danger px-1">{{ problems.most_overcrowded_room }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded d-flex justify-content-between align-items-center h-100 metric-card">
+                            <div class="text-muted small fw-bold text-uppercase">Most Underused</div>
+                            <div class="fw-bold px-1 metric-value-warning">{{ problems.most_underused_room }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded d-flex justify-content-between align-items-center h-100 metric-card">
+                            <div class="text-muted small fw-bold text-uppercase">Peak Hour</div>
+                            <div class="fw-bold px-1">{{ problems.peak_hour }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 border rounded d-flex justify-content-between align-items-center h-100 metric-card">
+                            <div class="text-muted small fw-bold text-uppercase">Quietest Hour</div>
+                            <div class="fw-bold px-1">{{ problems.quietest_hour }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="chart-card h-100">
+                <div class="chart-title">Room Occupancy Rate</div>
+                <canvas id="barChart" height="100"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-card h-100 d-flex flex-column">
+                <div class="chart-title">Section Status Distribution</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-card mb-4">
+        <div class="chart-title">Heatmap 1: Room x Time Occupancy</div>
+        <div class="table-responsive">
+            <table class="table table-bordered heatmap-table align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Room (Floor)</th>
+                        {% for t in room_heatmap.times %}
+                        <th>{{ t }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in room_heatmap.rows %}
+                    <tr>
+                        <th class="text-start">Room {{ row.room_id }} ({{ row.floor_label }})</th>
+                        {% for cell in row.cells %}
+                        <td class="heatmap-cell"
+                            style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};"
+                            title="{{ cell.tooltip }}">
+                            {{ cell.value }}%
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="chart-card mb-4">
+        <div class="chart-title">Heatmap 2: Building Traffic by Floor x Time</div>
+        <div class="table-responsive">
+            <table class="table table-bordered heatmap-table align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Floor</th>
+                        {% for t in floor_heatmap.times %}
+                        <th>{{ t }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in floor_heatmap.rows %}
+                    <tr>
+                        <th class="text-start">{{ row.floor_label }}</th>
+                        {% for cell in row.cells %}
+                        <td class="heatmap-cell"
+                            style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};"
+                            title="{{ cell.tooltip }}">
+                            {{ cell.students }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const isDarkTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    Chart.defaults.color = isDarkTheme ? '#cbd5e1' : '#666666';
+    Chart.defaults.font.family = 'Arial, sans-serif';
+    Chart.defaults.borderColor = isDarkTheme ? 'rgba(148,163,184,0.18)' : 'rgba(0,0,0,0.08)';
+
+    const barLabels = {{ bar_chart.labels | tojson }};
+    const barData = {{ bar_chart.data | tojson }};
+    const barColors = barData.map(v => {
+        if (v > 100) return '#d9534f';
+        if (v < 40) return '#f0ad4e';
+        return '#5bc0de';
+    });
+
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: barLabels,
+            datasets: [{
+                label: 'Occupancy %',
+                data: barData,
+                backgroundColor: barColors,
+                borderColor: barColors,
+                borderWidth: 1,
+                borderRadius: 2,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}%` } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 140,
+                    ticks: { callback: v => v + '%' },
+                    grid: { color: isDarkTheme ? 'rgba(148,163,184,0.18)' : 'rgba(0,0,0,0.08)' }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    const pieData = {{ pie_chart | tojson }};
+    new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Normal', 'Overcrowded', 'Underutilized'],
+            datasets: [{
+                data: [pieData.Normal, pieData.Overcrowded, pieData.Underutilized],
+                backgroundColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
+                borderColor: ['#5cb85c', '#d9534f', '#f0ad4e'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '62%',
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } }
+            }
+        }
+    });
+</script>
+{% endblock %}

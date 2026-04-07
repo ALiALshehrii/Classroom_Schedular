@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Schedule Assistant – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Instructor Smart Scheduling Assistant</h1>
+        <p>Find ranked time and room options based on constraints and live twin state.</p>
+    </div>
+
+    <div class="sim-form-card mb-4">
+        <form method="post" action="{{ url_for('schedule_assistant_view') }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Instructor</label>
+                    <select name="instructor" class="form-select">
+                        <option value="">Any</option>
+                        {% for name in instructors %}
+                        <option value="{{ name }}" {% if selected_instructor==name %}selected{% endif %}>{{ name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Preferred Time</label>
+                    <select name="preferred_time" class="form-select">
+                        {% for t in time_options %}
+                        <option value="{{ t }}" {% if selected_time==t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Preferred Room</label>
+                    <select name="preferred_room" class="form-select">
+                        <option value="Any" {% if selected_room=='Any' %}selected{% endif %}>Any</option>
+                        {% for room in room_ids %}
+                        <option value="{{ room }}" {% if selected_room==room %}selected{% endif %}>{{ room }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Room Type Needed</label>
+                    <select name="room_type" class="form-select" required>
+                        <option value="Any" {% if selected_room_type == 'Any' %}selected{% endif %}>Any</option>
+                        {% for rt in room_types %}
+                        <option value="{{ rt }}" {% if selected_room_type == rt %}selected{% endif %}>
+                            {{ rt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Number of Students</label>
+                    <input type="number" class="form-control" name="num_students" min="1" required
+                        value="{{ selected_students }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dt-primary w-100">Find Best Slots</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if suggestions %}
+    <div class="table-header">
+        <h5 class="table-title">Ranked Suggestions</h5>
+        <span class="muted-label">{{ suggestions|length }} options found</span>
+    </div>
+    <div class="row g-3 mt-1">
+        {% for s in suggestions %}
+        <div class="col-md-6 col-lg-4">
+            <div class="conflict-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div style="font-weight:700;">Room {{ s.room_id }}</div>
+                    <span class="badge bg-{{ s.fit_level }}">{{ s.fit_label }}</span>
+                </div>
+                <div class="muted-label mb-2">
+                    Floor {{ s.floor }} | {{ s.room_type }} | Capacity {{ s.capacity }}
+                </div>
+                <div style="font-size:0.95rem;">
+                    <div><strong>Day:</strong> {{ s.day }}</div>
+                    <div><strong>Time:</strong> {{ s.time }}</div>
+                    <div><strong>Utilization if placed:</strong> {{ s.utilization_pct }}%</div>
+                    <div><strong>Slack seats:</strong> {{ s.slack }}</div>
+                    <div><strong>Time-slot busyness:</strong> {{ s.time_busyness }} sections</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif request.method == "POST" %}
+    <div class="dt-table-wrapper">
+        <div class="empty-state">
+            <h5>No Available Slot Matches</h5>
+            <p>Try a different time, room, or room type.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

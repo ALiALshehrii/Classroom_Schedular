@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Interactive Calendar – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block extra_head %}
+<!-- FullCalendar via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<style>
+  #calendar {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 800px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  .fc-event {
+    cursor: grab;
+    border-radius: 6px;
+    border: none;
+    padding: 2px 4px;
+    font-size: 0.85em;
+  }
+  .fc-event-dragging {
+    cursor: grabbing;
+  }
+  /* Style FullCalendar to fit the theme */
+  .fc-theme-standard td, .fc-theme-standard th {
+    border-color: var(--border);
+  }
+  .fc-timegrid-slot {
+      height: 2.5em; /* Increase row height for readability */
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Interactive Calendar</h1>
+            <p>Drag and drop classes onto new times or days. Edits directly update the schedules backend!</p>
+        </div>
+        <div>
+            <form id="roomFilterForm" class="d-flex align-items-center gap-2">
+                <label for="roomSelect" class="form-label mb-0" style="white-space: nowrap;">View Room:</label>
+                <select class="form-select" id="roomSelect" name="room_id" onchange="document.getElementById('roomFilterForm').submit()">
+                    <option value="">All Rooms</option>
+                    {% for room in room_ids %}
+                    <option value="{{ room }}" {% if room == selected_room %}selected{% endif %}>
+                        {{ room }} {% if room_counts.get(room, 0) == 0 %}(Empty){% else %}({{ room_counts.get(room) }} classes){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div id="calendar"></div>
+</div>
+
+<!-- Room Transfer Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background: var(--panel); border: 1px solid var(--border);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border);">
+        <h5 class="modal-title" style="color: var(--text-color);">Transfer Class to New Room</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="transferCourseDetails" style="color: var(--text-color);"></p>
+        <div class="mb-3">
+            <label for="transferRoomSelect" class="form-label" style="color: var(--text-color);">Select Target Room:</label>
+            <select class="form-select" id="transferRoomSelect">
+                {% for room in room_ids %}
+                <option value="{{ room }}">{{ room }} {% if room_counts.get(room, 0) == 0 %}(Empty){% else %}({{ room_counts.get(room) }} classes){% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" id="transferCrn">
+        <input type="hidden" id="transferDate">
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid var(--border);">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="executeRoomTransfer()">Apply Transfer</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var roomSelect = document.getElementById('roomSelect');
+    var selectedRoom = roomSelect.value;
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        initialDate: '2024-01-07', // Maps dynamically to our "Sun-Tue" logic
+        headerToolbar: {
+            left: '',
+            center: 'title',
+            right: ''
+        },
+        titleFormat: {
+            text: 'Weekly Master Plan'
+        },
+        slotMinTime: '08:00:00',
+        slotMaxTime: '18:00:00',
+        allDaySlot: false,
+        editable: true,       // Enables dragging
+        droppable: true,      // Enables dropping
+        eventOverlap: false,  // Prevents dropping a class onto an occupied time slot
+        events: '/api/events?room_id=' + encodeURIComponent(selectedRoom) + '&cb=' + new Date().getTime(),
+        
+        eventClick: function(info) {
+            var crn = info.event.extendedProps.crn;
+            var title = info.event.title;
+            var currentRoom = info.event.extendedProps.room_id;
+            var startStr = info.event.startStr;
+            
+            document.getElementById('transferCourseDetails').innerText = "Moving " + title + " from R" + currentRoom + " to:";
+            document.getElementById('transferCrn').value = crn;
+            document.getElementById('transferDate').value = startStr;
+            
+            var select = document.getElementById('transferRoomSelect');
+            for(var i=0; i<select.options.length; i++) {
+                if(select.options[i].value === currentRoom) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            var transferModal = new bootstrap.Modal(document.getElementById('transferModal'));
+            transferModal.show();
+        },
+        
+        eventDrop: function(info) {
+            var newStart = info.event.startStr;
+            var crn = info.event.extendedProps.crn;
+            
+            var targetRoom = selectedRoom;
+            if(!targetRoom) {
+               targetRoom = info.event.extendedProps.room_id; // Default back to the event's own room if viewing ALL.
+            }
+
+            if(confirm("Are you sure you want to move '" + info.event.title + "' to a new time block?")) {
+                fetch('/api/update-event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crn: crn,
+                        start: newStart,
+                        room_id: targetRoom
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert("Schedule successfully updated!");
+                    } else {
+                        alert("Error saving schedule: " + data.error);
+                        info.revert();
+                    }
+                })
+                .catch(err => {
+                    alert("Network error.");
+                    info.revert();
+                });
+            } else {
+                info.revert();
+            }
+        }
+    });
+    
+    calendar.render();
+});
+
+window.executeRoomTransfer = function() {
+    var crn = document.getElementById('transferCrn').value;
+    var startStr = document.getElementById('transferDate').value;
+    var newRoom = document.getElementById('transferRoomSelect').value;
+    
+    fetch('/api/update-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            crn: crn,
+            start: startStr,
+            room_id: newRoom
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert("Successfully transferred to Room " + newRoom + "!");
+            location.reload();
+        } else {
+            alert("Error transferring: " + data.error);
+        }
+    })
+    .catch(err => {
+        alert("Network error.");
+    });
+};
+</script>
+{% endblock %}

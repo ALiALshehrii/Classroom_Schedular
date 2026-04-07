@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}About Twin – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Multiple Digital Twin Approaches</h1>
+        <p>How this system uses state mirror, simulation, and optimization twins together.</p>
+    </div>
+
+    <div class="conflict-card mb-4">
+        <div class="conflict-title">Approach 1: State Mirror Twin</div>
+        <div class="conflict-meta mb-3">
+            <code>build_twin_state()</code> creates a complete in-memory mirror of all (Room_ID, Day, Time) slots.
+        </div>
+        <div class="prototype-grid">
+            <div class="kpi-card">
+                <div class="kpi-value">{{ twin_state.total_slots }}</div>
+                <div class="kpi-label">Total Slots</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">{{ twin_state.occupied_slots }}</div>
+                <div class="kpi-label">Occupied Slots</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">{{ twin_state.empty_slots }}</div>
+                <div class="kpi-label">Empty Slots</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="conflict-card mb-4">
+        <div class="conflict-title">Approach 2: Simulation Twin (What-If Engine)</div>
+        <div class="conflict-meta">
+            <code>simulate_move()</code> runs in sandbox mode on simulated conditions. Changes tested there do not
+            update real CSV data.
+        </div>
+        <div class="mt-3">
+            <a href="{{ url_for('simulation_view') }}" class="btn btn-dt-secondary">Open Simulation Twin</a>
+        </div>
+    </div>
+
+    <div class="conflict-card">
+        <div class="conflict-title">Approach 3: Optimization Twin (Prescriptive)</div>
+        <div class="conflict-meta mb-3">
+            <code>generate_recommendations()</code> prescribes best room reassignment actions for overcrowded classes.
+        </div>
+        <div class="muted-label mb-3">
+            If all {{ impact.applied_recommendations }} recommendations are applied:
+            utilization changes from <strong>{{ impact.current_avg_utilization }}%</strong> to
+            <strong>{{ impact.projected_avg_utilization }}%</strong>,
+            resolving <strong>{{ impact.sections_resolved }}</strong> overcrowded sections.
+        </div>
+        <a href="{{ url_for('recommendations_view') }}" class="btn btn-dt-primary">Open Optimization Twin</a>
+    </div>
+</div>
+{% endblock %}
