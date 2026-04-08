@@ -143,7 +143,7 @@
                         <td class="heatmap-cell"
                             style="--hm-bg-dark: {{ cell.dark_color }}; --hm-fg-dark: {{ cell.dark_text_color }}; background-color: {{ cell.color }}; color: {{ cell.text_color }};"
                             title="{{ cell.tooltip }}">
-                            {{ cell.value }}%
+                            {{ cell.display_value }}
                         </td>
                         {% endfor %}
                     </tr>

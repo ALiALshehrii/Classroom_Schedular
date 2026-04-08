@@ -801,6 +801,10 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
     room_map = rooms_df.set_index("Room_ID").to_dict(orient="index")
     day_options, time_slots = _get_schedule_dimensions(schedule_df)
     rows = []
+    schedule_capacity_by_room = (
+        schedule_df.groupby("Room_ID")["Capacity"].max().to_dict()
+        if not schedule_df.empty else {}
+    )
 
     rooms_sorted = [
         str(r["Room_ID"])
@@ -818,9 +822,13 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
         floor_value = int(room_info["Floor"]) if room_info is not None else None
         floor_label = f"F{floor_value}" if floor_value is not None else "Unmapped"
         room_capacity = int(room_info["Capacity"]) if room_info is not None else None
+        schedule_capacity = int(schedule_capacity_by_room.get(room_id, 0))
+        # If rooms.csv has placeholder capacities (e.g., 1/2/3), fallback to schedule capacity.
+        effective_capacity = max(room_capacity or 0, schedule_capacity or 0)
         row_cells = []
         for time in time_slots:
             day_pcts = []
+            occupied_day_pcts = []
             tooltip_parts = []
             for day in day_options:
                 slot_df = schedule_df[
@@ -834,27 +842,34 @@ def build_room_time_heatmap(rooms_df: pd.DataFrame, schedule_df: pd.DataFrame) -
                     tooltip_parts.append(f"{day}: Empty")
                 else:
                     total_enrolled = int(slot_df["Enrolled"].sum())
-                    if room_capacity is not None:
-                        cap = room_capacity
-                    else:
-                        cap = int(slot_df["Capacity"].max()) if not slot_df["Capacity"].empty else 0
+                    cap = effective_capacity or int(slot_df["Capacity"].max()) if not slot_df["Capacity"].empty else 0
                     pct = round((total_enrolled / cap) * 100, 1) if cap else 0.0
                     day_pcts.append(pct)
+                    occupied_day_pcts.append(pct)
                     details = " | ".join(
                         f"{r['Course_Name']} ({r['Instructor']}, {int(r['Enrolled'])}/{int(r['Capacity'])})"
                         for _, r in slot_df.iterrows()
                     )
                     tooltip_parts.append(f"{day}: {details}")
 
-            avg_pct = round(sum(day_pcts) / len(day_options), 1)
+            has_classes = len(occupied_day_pcts) > 0
+            avg_pct = round(sum(occupied_day_pcts) / len(occupied_day_pcts), 1) if has_classes else 0.0
             row_cells.append({
                 "time": time,
                 "value": avg_pct,
+                "display_value": f"{avg_pct}%" if has_classes else "-",
                 "color": occupancy_to_color_light(avg_pct),
                 "text_color": occupancy_to_text_color_light(avg_pct),
                 "dark_color": occupancy_to_color_dark(avg_pct),
                 "dark_text_color": occupancy_to_text_color_dark(avg_pct),
-                "tooltip": f"Room {room_id} at {time} | " + " || ".join(tooltip_parts),
+                "tooltip": (
+                    f"Room {room_id} at {time} | "
+                    + " || ".join(tooltip_parts)
+                    + (
+                        f" || Avg over occupied days: {avg_pct}%"
+                        if has_classes else " || No classes in this slot."
+                    )
+                ),
             })
 
         rows.append({

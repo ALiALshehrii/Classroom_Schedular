@@ -1,16 +1,31 @@
 Room_ID,Floor,Type,Capacity
-4866,1,Lecture Hall,60
-6723,1,Lecture Hall,60
-2884,1,Lecture Hall,50
-3013,1,Computer Lab,30
-5158,1,Computer Lab,25
-6183,2,Lecture Hall,55
-3559,2,Lecture Hall,50
-9448,2,Lecture Hall,50
-3724,2,Lecture Hall,60
-5390,2,Computer Lab,25
-6672,3,Lecture Hall,40
-4977,3,Lecture Hall,35
-2932,3,Computer Lab,25
-9372,3,Computer Lab,30
-7230,3,Computer Lab,20
+1001,60,Classroom,1
+1002,55,Classroom,1
+1003,50,Classroom,1
+1004,45,Classroom,1
+1005,40,Classroom,1
+1006,35,Classroom,1
+1007,30,Classroom,1
+1008,60,Classroom,1
+1009,50,Classroom,1
+1010,45,Classroom,1
+2001,60,Classroom,2
+2002,55,Classroom,2
+2003,50,Classroom,2
+2004,45,Classroom,2
+2005,40,Classroom,2
+2006,35,Classroom,2
+2007,30,Classroom,2
+2008,60,Classroom,2
+2009,50,Classroom,2
+2010,45,Classroom,2
+3001,60,Classroom,3
+3002,55,Classroom,3
+3003,50,Classroom,3
+3004,45,Classroom,3
+3005,40,Classroom,3
+3006,35,Classroom,3
+3007,30,Classroom,3
+3008,60,Classroom,3
+3009,50,Classroom,3
+3010,45,Classroom,3

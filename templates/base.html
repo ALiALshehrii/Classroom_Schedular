@@ -81,14 +81,39 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p class="text-muted small mb-3">Upload both files in the same column order and layout as the current CSV files.</p>
+            <p class="text-muted small mb-3">Import a schedule only. The current rooms file stays unchanged.</p>
             <div class="mb-3">
-              <label for="scheduleCsvInput" class="form-label">Schedule CSV</label>
-              <input id="scheduleCsvInput" type="file" name="schedule_csv" accept=".csv,text/csv" class="form-control" required>
+              <span class="form-label d-block">Schedule Source</span>
+              <div class="btn-group w-100" role="group" aria-label="Choose schedule source">
+                <input type="radio" class="btn-check" name="source_mode" id="sourceModeUpload" value="upload" checked>
+                <label class="btn btn-outline-secondary" for="sourceModeUpload">Upload File</label>
+
+                <input type="radio" class="btn-check" name="source_mode" id="sourceModeData" value="data">
+                <label class="btn btn-outline-secondary" for="sourceModeData">Saved Files</label>
+              </div>
             </div>
-            <div class="mb-0">
-              <label for="roomsCsvInput" class="form-label">Rooms CSV</label>
-              <input id="roomsCsvInput" type="file" name="rooms_csv" accept=".csv,text/csv" class="form-control" required>
+
+            <div id="uploadFields">
+              <p class="text-muted small mb-3">Upload a schedule CSV. It will be saved into the data folder and set as the active schedule.</p>
+              <div class="mb-0">
+                <label for="scheduleCsvInput" class="form-label">Schedule CSV</label>
+                <input id="scheduleCsvInput" type="file" name="schedule_csv" accept=".csv,text/csv" class="form-control">
+              </div>
+            </div>
+
+            <div id="dataFields" class="d-none">
+              <p class="text-muted small mb-3">Choose a saved schedule file from the data folder and rebuild the site from it.</p>
+              <div class="mb-0">
+                <label for="dataScheduleSelect" class="form-label">Schedule Dataset</label>
+                <select id="dataScheduleSelect" name="data_schedule_id" class="form-select">
+                  <option value="">Select a schedule...</option>
+                  {% for dataset in import_schedule_datasets %}
+                  <option value="{{ dataset.id }}">
+                    {{ dataset.label }}{% if dataset.is_active %} (active){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -170,6 +195,27 @@
       });
     });
     observer.observe(htmlElem, { attributes: true });
+
+    const sourceModeUpload = document.getElementById('sourceModeUpload');
+    const sourceModeData = document.getElementById('sourceModeData');
+    const uploadFields = document.getElementById('uploadFields');
+    const dataFields = document.getElementById('dataFields');
+    const scheduleCsvInput = document.getElementById('scheduleCsvInput');
+    const dataScheduleSelect = document.getElementById('dataScheduleSelect');
+
+    const syncImportModalFields = () => {
+      const useDataFolder = sourceModeData && sourceModeData.checked;
+      if (uploadFields && dataFields) {
+        uploadFields.classList.toggle('d-none', useDataFolder);
+        dataFields.classList.toggle('d-none', !useDataFolder);
+      }
+      if (scheduleCsvInput) scheduleCsvInput.required = !useDataFolder;
+      if (dataScheduleSelect) dataScheduleSelect.required = useDataFolder;
+    };
+
+    if (sourceModeUpload) sourceModeUpload.addEventListener('change', syncImportModalFields);
+    if (sourceModeData) sourceModeData.addEventListener('change', syncImportModalFields);
+    syncImportModalFields();
 
   </script>
 

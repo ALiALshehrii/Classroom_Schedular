@@ -1,0 +1,40 @@
+CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrolled,Status
+10001,CS314,Machine Learning,Hassan,Tue,14:00-15:30,2007,Classroom,30,56,overcrowded
+10002,CS373,Computer Architecture,Mona,Tue,14:00-15:30,2007,Classroom,30,52,overcrowded
+10003,CS355,Algorithms,Sara,Tue,14:00-15:30,2007,Classroom,30,34,overcrowded
+10004,CS525,Data Structures,Ali,Tue,14:00-15:30,2007,Classroom,30,39,overcrowded
+10005,CS214,Artificial Intelligence,Mona,Wed,08:00-09:30,3005,Classroom,40,60,overcrowded
+10006,CS502,Computer Networks,Hassan,Mon,14:00-15:30,2006,Classroom,35,45,overcrowded
+10007,CS473,Computer Networks,Ali,Wed,10:00-11:30,2001,Classroom,60,37,normal
+10008,CS234,Computer Networks,Omar,Wed,12:00-13:30,3009,Classroom,50,17,underutilized
+10009,CS480,Data Structures,Fahad,Thu,14:00-15:30,2005,Classroom,40,54,overcrowded
+10010,CS372,Discrete Mathematics,Hassan,Thu,10:00-11:30,1005,Classroom,40,40,normal
+10011,CS650,Data Structures,Fahad,Sun,12:00-13:30,3010,Classroom,45,70,overcrowded
+10012,CS433,Machine Learning,Nora,Mon,08:00-09:30,2010,Classroom,45,11,underutilized
+10013,CS313,Discrete Mathematics,Omar,Sun,10:00-11:30,3009,Classroom,50,26,normal
+10014,CS505,Databases,Sara,Mon,14:00-15:30,1010,Classroom,45,15,underutilized
+10015,CS220,Databases,Hassan,Sun,08:00-09:30,1006,Classroom,35,29,normal
+10016,CS668,Algorithms,Omar,Mon,12:00-13:30,3008,Classroom,60,26,underutilized
+10017,CS477,Computer Architecture,Fahad,Thu,12:00-13:30,3006,Classroom,35,39,overcrowded
+10018,CS436,Databases,Ali,Sun,08:00-09:30,1005,Classroom,40,37,normal
+10019,CS458,Data Structures,Omar,Sun,08:00-09:30,1002,Classroom,55,11,underutilized
+10020,CS227,Discrete Mathematics,Ali,Thu,14:00-15:30,2002,Classroom,55,57,overcrowded
+10021,CS628,Discrete Mathematics,Omar,Thu,08:00-09:30,1004,Classroom,45,50,overcrowded
+10022,CS515,Machine Learning,Ali,Thu,14:00-15:30,1004,Classroom,45,64,overcrowded
+10023,CS350,Computer Architecture,Fahad,Sun,10:00-11:30,1003,Classroom,50,45,normal
+10024,CS481,Machine Learning,Hassan,Mon,12:00-13:30,3009,Classroom,50,30,normal
+10025,CS248,Computer Architecture,Hassan,Thu,10:00-11:30,1001,Classroom,60,61,overcrowded
+10026,CS630,Computer Architecture,Fahad,Thu,12:00-13:30,3001,Classroom,60,43,normal
+10027,CS526,Databases,Nora,Thu,14:00-15:30,3006,Classroom,35,51,overcrowded
+10028,CS509,Computer Architecture,Ali,Mon,10:00-11:30,2010,Classroom,45,38,normal
+10029,CS499,Algorithms,Ali,Sun,10:00-11:30,3008,Classroom,60,47,normal
+10030,CS318,Operating Systems,Omar,Sun,10:00-11:30,1005,Classroom,40,50,overcrowded
+10031,CS616,Discrete Mathematics,Sara,Wed,12:00-13:30,1004,Classroom,45,34,normal
+10032,CS543,Machine Learning,Ali,Thu,12:00-13:30,3001,Classroom,60,33,normal
+10033,CS543,Algorithms,Ali,Mon,08:00-09:30,3001,Classroom,60,50,normal
+10034,CS296,Data Structures,Omar,Thu,12:00-13:30,3004,Classroom,45,69,overcrowded
+10035,CS574,Machine Learning,Ali,Tue,10:00-11:30,3006,Classroom,35,45,overcrowded
+10036,CS664,Databases,Omar,Mon,14:00-15:30,3002,Classroom,55,48,normal
+10037,CS675,Machine Learning,Sara,Sun,12:00-13:30,3004,Classroom,45,18,underutilized
+10038,CS350,Algorithms,Ali,Tue,08:00-09:30,2008,Classroom,60,36,normal
+10039,CS600,Machine Learning,Lina,Thu,08:00-09:30,1007,Classroom,30,58,overcrowded

@@ -1,0 +1,61 @@
+CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrolled,Status
+20001,CS101,Introduction to Programming,Ali,Sun,08:00-09:30,1001,Classroom,50,44,normal
+20002,CS102,Discrete Mathematics,Sara,Sun,10:00-11:30,1001,Classroom,50,41,normal
+20003,CS103,Computer Architecture,Omar,Mon,12:00-13:30,1001,Classroom,50,38,normal
+20004,CS104,Data Structures,Hassan,Tue,14:00-15:30,1001,Classroom,50,46,normal
+20005,CS105,Operating Systems,Mona,Sun,08:00-09:30,1002,Classroom,45,34,normal
+20006,CS106,Algorithms,Fahad,Mon,10:00-11:30,1002,Classroom,45,36,normal
+20007,CS107,Database Systems,Nora,Tue,12:00-13:30,1002,Classroom,45,29,normal
+20008,CS108,Software Engineering,Lina,Wed,14:00-15:30,1002,Classroom,45,33,normal
+20009,CS109,Computer Networks,Ali,Sun,10:00-11:30,1003,Classroom,55,43,normal
+20010,CS110,Machine Learning,Sara,Mon,12:00-13:30,1003,Classroom,55,48,normal
+20011,CS111,Web Development,Omar,Tue,14:00-15:30,1003,Classroom,55,40,normal
+20012,CS112,Cloud Computing,Hassan,Thu,08:00-09:30,1003,Classroom,55,37,normal
+20013,CS113,Cybersecurity Fundamentals,Mona,Sun,12:00-13:30,1004,Classroom,48,35,normal
+20014,CS114,Human-Computer Interaction,Fahad,Mon,14:00-15:30,1004,Classroom,48,31,normal
+20015,CS115,Information Security,Nora,Tue,08:00-09:30,1004,Classroom,48,39,normal
+20016,CS116,Data Mining,Lina,Wed,10:00-11:30,1004,Classroom,48,42,normal
+20017,CS117,Linear Algebra for CS,Ali,Sun,14:00-15:30,1005,Classroom,52,45,normal
+20018,CS118,Probability and Statistics,Sara,Mon,08:00-09:30,1005,Classroom,52,33,normal
+20019,CS119,Compiler Design,Omar,Tue,10:00-11:30,1005,Classroom,52,47,normal
+20020,CS120,Mobile App Development,Hassan,Thu,12:00-13:30,1005,Classroom,52,40,normal
+20021,CS121,Artificial Intelligence,Mona,Sun,08:00-09:30,1006,Classroom,46,44,normal
+20022,CS122,Advanced Databases,Fahad,Mon,10:00-11:30,1006,Classroom,46,32,normal
+20023,CS123,Computer Graphics,Nora,Tue,12:00-13:30,1006,Classroom,46,37,normal
+20024,CS124,Embedded Systems,Lina,Wed,14:00-15:30,1006,Classroom,46,30,normal
+20025,CS125,Information Retrieval,Ali,Sun,10:00-11:30,1007,Classroom,44,29,normal
+20026,CS126,Natural Language Processing,Sara,Mon,12:00-13:30,1007,Classroom,44,34,normal
+20027,CS127,Distributed Systems,Omar,Tue,14:00-15:30,1007,Classroom,44,38,normal
+20028,CS128,Digital Logic Design,Hassan,Thu,08:00-09:30,1007,Classroom,44,31,normal
+20029,CS129,Big Data Analytics,Mona,Sun,12:00-13:30,1008,Classroom,60,49,normal
+20030,CS130,Programming Languages,Fahad,Mon,14:00-15:30,1008,Classroom,60,45,normal
+20031,CS131,Advanced Algorithms,Nora,Tue,08:00-09:30,1008,Classroom,60,52,normal
+20032,CS132,System Administration,Lina,Wed,10:00-11:30,1008,Classroom,60,41,normal
+20033,CS133,Project Management for IT,Ali,Sun,14:00-15:30,1009,Classroom,42,27,normal
+20034,CS134,Secure Software Development,Sara,Mon,08:00-09:30,1009,Classroom,42,31,normal
+20035,CS135,Parallel Computing,Omar,Tue,10:00-11:30,1009,Classroom,42,36,normal
+20036,CS136,Computer Vision,Hassan,Thu,12:00-13:30,1009,Classroom,42,28,normal
+20037,CS137,Internet of Things,Mona,Sun,08:00-09:30,1010,Classroom,40,30,normal
+20038,CS138,Advanced Networking,Fahad,Mon,10:00-11:30,1010,Classroom,40,34,normal
+20039,CS139,Business Intelligence,Nora,Tue,12:00-13:30,1010,Classroom,40,26,normal
+20040,CS140,Data Ethics,Lina,Wed,14:00-15:30,1010,Classroom,40,22,normal
+20041,CS141,Operating Systems Lab,Ali,Sun,10:00-11:30,2001,Classroom,50,39,normal
+20042,CS142,Database Lab,Sara,Mon,12:00-13:30,2002,Classroom,50,41,normal
+20043,CS143,Networking Lab,Omar,Tue,14:00-15:30,2003,Classroom,50,35,normal
+20044,CS144,AI Lab,Hassan,Thu,08:00-09:30,2004,Classroom,50,44,normal
+20045,CS145,Web Engineering,Mona,Sun,12:00-13:30,2005,Classroom,52,38,normal
+20046,CS146,Software Testing,Fahad,Mon,14:00-15:30,2006,Classroom,52,42,normal
+20047,CS147,Systems Analysis,Nora,Tue,08:00-09:30,2007,Classroom,52,40,normal
+20048,CS148,Digital Transformation,Lina,Wed,10:00-11:30,2008,Classroom,52,36,normal
+20049,CS149,Knowledge Representation,Ali,Sun,14:00-15:30,2009,Classroom,46,34,normal
+20050,CS150,Theory of Computation,Sara,Mon,08:00-09:30,2010,Classroom,46,37,normal
+20051,CS151,Advanced Security,Omar,Tue,10:00-11:30,3001,Classroom,58,45,normal
+20052,CS152,Machine Learning Engineering,Hassan,Thu,12:00-13:30,3002,Classroom,58,48,normal
+20053,CS153,Data Warehousing,Mona,Sun,08:00-09:30,3003,Classroom,58,43,normal
+20054,CS154,Robotics,Sara,Mon,10:00-11:30,3004,Classroom,58,39,normal
+20055,CS155,Blockchain Fundamentals,Omar,Tue,12:00-13:30,3005,Classroom,58,35,normal
+20056,CS156,Quantum Computing Basics,Hassan,Wed,14:00-15:30,3006,Classroom,58,31,normal
+20057,CS157,Cloud Security,Lina,Thu,08:00-09:30,3007,Classroom,58,46,normal
+20058,CS158,DevOps Practices,Ali,Sun,10:00-11:30,3008,Classroom,58,44,normal
+20059,CS159,Advanced Data Science,Fahad,Mon,12:00-13:30,3009,Classroom,58,49,normal
+20060,CS160,Capstone Seminar,Nora,Tue,14:00-15:30,3010,Classroom,58,42,normal
