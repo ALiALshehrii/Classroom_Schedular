@@ -141,6 +141,49 @@
     {% block content %}{% endblock %}
   </main>
 
+  <button type="button" class="floating-ai-btn" aria-label="Open AI chat" data-bs-toggle="modal" data-bs-target="#aiChatModal">
+    🤖
+  </button>
+
+  <div class="modal fade" id="aiChatModal" tabindex="-1" aria-labelledby="aiChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog ai-chat-modal-dialog">
+      <div class="modal-content ai-chat-modal-content">
+        <div class="modal-header ai-chat-header">
+          <h5 class="modal-title" id="aiChatModalLabel">Scheduling Assistant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body ai-chat-body">
+          {% if not api_key_configured %}
+          <div class="alert alert-warning ai-chat-warning mb-2">
+            Gemini API key is not configured.
+          </div>
+          {% endif %}
+          <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-chat-message ai-chat-message-ai">
+              👋 Hello! Ask me about rooms, schedules, and conflicts.
+            </div>
+          </div>
+          <div class="ai-typing-indicator" id="aiTypingIndicator">
+            <span></span><span></span><span></span>
+          </div>
+          <form class="ai-chat-input-wrap" id="aiChatForm">
+            <input
+              type="text"
+              class="form-control"
+              id="aiMessageInput"
+              placeholder="Ask about schedules or rooms..."
+              autocomplete="off"
+              {% if not api_key_configured %}disabled{% endif %}
+            >
+            <button type="submit" class="btn btn-dt-primary ai-send-btn" id="aiSendBtn" {% if not api_key_configured %}disabled{% endif %}>
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="dt-footer position-relative">
     <div class="position-absolute start-0 top-50 translate-middle-y ps-4">
       <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary footer-theme-btn">
@@ -216,6 +259,61 @@
     if (sourceModeUpload) sourceModeUpload.addEventListener('change', syncImportModalFields);
     if (sourceModeData) sourceModeData.addEventListener('change', syncImportModalFields);
     syncImportModalFields();
+
+    (() => {
+      const aiChatForm = document.getElementById('aiChatForm');
+      const aiMessageInput = document.getElementById('aiMessageInput');
+      const aiChatMessages = document.getElementById('aiChatMessages');
+      const aiTypingIndicator = document.getElementById('aiTypingIndicator');
+      const aiSendBtn = document.getElementById('aiSendBtn');
+
+      if (!aiChatForm || !aiMessageInput || !aiChatMessages || !aiTypingIndicator || !aiSendBtn) {
+        return;
+      }
+
+      const addAiMessage = (text, isUser) => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `ai-chat-message ${isUser ? 'ai-chat-message-user' : 'ai-chat-message-ai'}`;
+        msgDiv.textContent = text;
+        aiChatMessages.appendChild(msgDiv);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+      };
+
+      aiChatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = aiMessageInput.value.trim();
+        if (!message) return;
+
+        addAiMessage(message, true);
+        aiMessageInput.value = '';
+        aiMessageInput.disabled = true;
+        aiSendBtn.disabled = true;
+        aiTypingIndicator.style.display = 'flex';
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+
+        try {
+          const response = await fetch('{{ url_for("api_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+            addAiMessage(data.reply || 'No response returned.', false);
+          } else {
+            addAiMessage(`Error: ${data.error || 'Unknown error'}`, false);
+          }
+        } catch (err) {
+          addAiMessage('Network error occurred. Please try again.', false);
+        } finally {
+          aiTypingIndicator.style.display = 'none';
+          aiMessageInput.disabled = false;
+          aiSendBtn.disabled = false;
+          aiMessageInput.focus();
+        }
+      });
+    })();
 
   </script>
 

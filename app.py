@@ -6,15 +6,23 @@ Defines all routes and passes data to Jinja2 templates.
 """
 
 import os
+import traceback
 
 import pandas as pd
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for, jsonify
 from werkzeug.utils import secure_filename
+
+try:
+    import google.generativeai as genai
+    has_genai = True
+except ImportError:
+    has_genai = False
 
 import analyzer
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "classroom-scheduler-dev-secret")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCIP1r8erKoXA7pE-Bchm4JALQXktG9IuE")
 SCHEDULE_COLUMNS = pd.read_csv(analyzer.SCHEDULE_CSV, nrows=0).columns.tolist()
 ROOMS_COLUMNS = pd.read_csv(analyzer.ROOMS_CSV, nrows=0).columns.tolist()
 DATA_DIR = os.path.join(analyzer.BASE_DIR, "data")
@@ -44,7 +52,12 @@ def _get_schedule_datasets():
 
 @app.context_processor
 def inject_import_schedule_datasets():
-    return {"import_schedule_datasets": _get_schedule_datasets()}
+    api_key_configured = has_genai and bool(GEMINI_API_KEY)
+            
+    return {
+        "import_schedule_datasets": _get_schedule_datasets(),
+        "api_key_configured": api_key_configured
+    }
 
 
 def get_data():
@@ -354,6 +367,40 @@ def about_twin_view():
         recommendations=recommendations,
         impact=impact,
     )
+
+
+@app.route("/ai-agent")
+def ai_agent_view():
+    return render_template("ai_agent.html")
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    if not has_genai:
+        return jsonify({"error": "google-generativeai module is not installed."}), 500
+        
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "API Key is missing. Please set GEMINI_API_KEY."}), 400
+        
+    data = request.get_json()
+    message = data.get("message", "")
+    
+    if not message:
+        return jsonify({"error": "No message provided."}), 400
+
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        # The user requested 2.5 Flash
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        # We can pass some basic context about the schedule here if we want!
+        # For this prototype, we'll just do a standard chat.
+        response = model.generate_content(message)
+        
+        return jsonify({"reply": response.text})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
