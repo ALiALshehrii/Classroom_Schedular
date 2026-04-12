@@ -6,7 +6,10 @@ Defines all routes and passes data to Jinja2 templates.
 """
 
 import os
+import re
 import traceback
+from datetime import datetime
+from typing import Optional
 
 import pandas as pd
 from flask import Flask, flash, redirect, render_template, request, url_for, jsonify
@@ -22,10 +25,39 @@ import analyzer
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "classroom-scheduler-dev-secret")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCIP1r8erKoXA7pE-Bchm4JALQXktG9IuE")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+CHATBOT_SYSTEM_INSTRUCTION = """
+You are the Digital Twin Classroom Scheduler assistant for this website.
+
+Rules:
+1) Only answer questions related to this website and its scheduling domain.
+2) You may help with anything related to conflicts, classes, overcrowded sections, what-if scenarios, students, instructors, rooms, time slots, utilization, and similar scheduling topics.
+3) If a question is outside this scope, do not answer it. Reply briefly that you can only help with website-related scheduling questions and invite the user to ask about the allowed topics.
+4) Prefer direct answers from provided schedule/rooms data. Do not ask users to navigate the website for answers you can compute.
+"""
 SCHEDULE_COLUMNS = pd.read_csv(analyzer.SCHEDULE_CSV, nrows=0).columns.tolist()
 ROOMS_COLUMNS = pd.read_csv(analyzer.ROOMS_CSV, nrows=0).columns.tolist()
 DATA_DIR = os.path.join(analyzer.BASE_DIR, "data")
+DAY_ALIAS_TO_CANONICAL = {
+    "sun": "Sun",
+    "sunday": "Sun",
+    "mon": "Mon",
+    "monday": "Mon",
+    "tue": "Tue",
+    "tues": "Tue",
+    "tuesday": "Tue",
+    "wed": "Wed",
+    "wednesday": "Wed",
+    "thu": "Thu",
+    "thur": "Thu",
+    "thurs": "Thu",
+    "thursday": "Thu",
+    "fri": "Fri",
+    "friday": "Fri",
+    "sat": "Sat",
+    "saturday": "Sat",
+}
+DAY_SORT_ORDER = {"Sun": 0, "Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6}
 
 
 def _get_schedule_datasets():
@@ -65,6 +97,176 @@ def get_data():
     schedule = analyzer.load_schedule()
     twin_state = analyzer.build_twin_state(rooms, schedule)
     return rooms, schedule, twin_state
+
+
+def _extract_day(message: str) -> Optional[str]:
+    normalized = f" {message.lower()} "
+    for alias, canonical in DAY_ALIAS_TO_CANONICAL.items():
+        if re.search(rf"\b{re.escape(alias)}\b", normalized):
+            return canonical
+    return None
+
+
+def _parse_time_token(token: str) -> Optional[str]:
+    value = token.strip().lower().replace(".", "")
+    value = re.sub(r"\s+", " ", value)
+    formats = ("%H:%M", "%H", "%I:%M %p", "%I %p", "%I%p", "%I:%M%p")
+    for fmt in formats:
+        try:
+            parsed = datetime.strptime(value, fmt)
+            return parsed.strftime("%H:%M")
+        except ValueError:
+            continue
+    return None
+
+
+def _extract_query_time(message: str) -> Optional[str]:
+    range_match = re.search(
+        r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*[-–]\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b",
+        message,
+        re.IGNORECASE,
+    )
+    if range_match:
+        start = _parse_time_token(range_match.group(1))
+        end = _parse_time_token(range_match.group(2))
+        if start and end:
+            return f"{start}-{end}"
+
+    time_match = re.search(r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b", message, re.IGNORECASE)
+    if time_match:
+        return _parse_time_token(time_match.group(1))
+    return None
+
+
+def _match_time_slots(schedule: pd.DataFrame, query_time: str) -> list[str]:
+    times = schedule["Time"].astype(str).str.strip().dropna().unique().tolist()
+    times = sorted(times)
+    if "-" in query_time:
+        return [query_time] if query_time in times else []
+
+    query_dt = datetime.strptime(query_time, "%H:%M")
+    matched = []
+    for slot in times:
+        parts = slot.split("-")
+        if len(parts) != 2:
+            continue
+        start_str = parts[0].strip()
+        end_str = parts[1].strip()
+        try:
+            start_dt = datetime.strptime(start_str, "%H:%M")
+            end_dt = datetime.strptime(end_str, "%H:%M")
+        except ValueError:
+            continue
+
+        if query_dt == start_dt or (start_dt <= query_dt < end_dt):
+            matched.append(slot)
+    return matched
+
+
+def _extract_room_id(message: str, rooms: pd.DataFrame) -> Optional[str]:
+    room_ids = set(rooms["Room_ID"].astype(str).tolist())
+    explicit_match = re.search(r"\broom\s*#?\s*([a-zA-Z0-9_-]+)\b", message, re.IGNORECASE)
+    if explicit_match:
+        candidate = explicit_match.group(1)
+        if candidate in room_ids:
+            return candidate
+
+    numeric_matches = re.findall(r"\b(\d{3,6})\b", message)
+    for candidate in numeric_matches:
+        if candidate in room_ids:
+            return candidate
+    return None
+
+
+def _format_conflict_rows(conflicts: list[dict], limit: int = 6) -> str:
+    if not conflicts:
+        return "No room conflicts found in the current schedule."
+
+    lines = []
+    for row in conflicts[:limit]:
+        lines.append(
+            f"- Room {row['room_id']} on {row['day']} at {row['time']} ({row['count']} sections: {row['crns']})"
+        )
+    if len(conflicts) > limit:
+        lines.append(f"- ...and {len(conflicts) - limit} more conflict slots.")
+    return "\n".join(lines)
+
+
+def _answer_from_local_data(message: str, rooms: pd.DataFrame, schedule: pd.DataFrame) -> Optional[str]:
+    text = message.strip()
+    lower = text.lower()
+    room_conflicts = analyzer.detect_room_conflicts(schedule)
+
+    is_conflict_query = any(word in lower for word in ["conflict", "double-book", "double book", "overlap"])
+    day = _extract_day(text)
+    asks_for_days = bool(re.search(r"\b(what|which)\s+days?\b", lower))
+
+    if is_conflict_query and day and not asks_for_days:
+        day_conflicts = [c for c in room_conflicts if str(c["day"]).strip().lower() == day.lower()]
+        if not day_conflicts:
+            return f"There are no room conflicts on {day}."
+        return f"Conflicts on {day} ({len(day_conflicts)} slots):\n{_format_conflict_rows(day_conflicts)}"
+
+    if is_conflict_query and asks_for_days:
+        if not room_conflicts:
+            return "There are no room conflicts in the current schedule."
+        days = sorted({c["day"] for c in room_conflicts}, key=lambda d: DAY_SORT_ORDER.get(d, 99))
+        return f"Conflicts happen on: {', '.join(days)}."
+
+    if is_conflict_query:
+        return f"Total room conflict slots: {len(room_conflicts)}.\n{_format_conflict_rows(room_conflicts)}"
+
+    is_availability_query = any(word in lower for word in ["available", "availability", "free", "booked", "occupied"])
+    if is_availability_query:
+        room_id = _extract_room_id(text, rooms)
+        if room_id:
+            day = _extract_day(text)
+            query_time = _extract_query_time(text)
+            if not day or not query_time:
+                return "I can check that. Please include room, day, and time (example: Room 1003 on Monday at 12:00)."
+
+            matched_slots = _match_time_slots(schedule, query_time)
+            if not matched_slots:
+                known_times = ", ".join(sorted(schedule["Time"].astype(str).unique().tolist()))
+                return f"I couldn't match that time to schedule slots. Available slots are: {known_times}."
+
+            occupied_rows = schedule[
+                (schedule["Room_ID"].astype(str) == room_id)
+                & (schedule["Day"].astype(str).str.strip().str.lower() == day.lower())
+                & (schedule["Time"].astype(str).isin(matched_slots))
+            ]
+            if occupied_rows.empty:
+                return f"Yes. Room {room_id} is available on {day} at {query_time}."
+
+            details = occupied_rows[["Course_Name", "CRN", "Time"]].drop_duplicates().to_dict(orient="records")
+            formatted = "; ".join([f"{d['Course_Name']} (CRN {d['CRN']}) at {d['Time']}" for d in details[:3]])
+            return f"No. Room {room_id} is not available on {day} at {query_time}. Scheduled: {formatted}."
+
+    if "total rooms" in lower or "how many rooms" in lower:
+        return f"Total rooms in the current dataset: {len(rooms)}."
+    if "total sections" in lower or "how many classes" in lower:
+        return f"Total scheduled sections in the current dataset: {len(schedule)}."
+
+    return None
+
+
+def _build_chat_context(rooms: pd.DataFrame, schedule: pd.DataFrame) -> str:
+    conflicts = analyzer.detect_room_conflicts(schedule)
+    overview = analyzer.get_building_overview_kpis(rooms, schedule)
+    sample_rows = schedule[
+        ["CRN", "Course_Name", "Instructor", "Day", "Time", "Room_ID", "Capacity", "Enrolled", "Status"]
+    ].head(80)
+    return (
+        f"Dataset summary:\n"
+        f"- Total rooms: {len(rooms)}\n"
+        f"- Total sections: {len(schedule)}\n"
+        f"- Days: {', '.join(sorted(schedule['Day'].astype(str).unique().tolist()))}\n"
+        f"- Time slots: {', '.join(sorted(schedule['Time'].astype(str).unique().tolist()))}\n"
+        f"- Conflict slots: {len(conflicts)}\n"
+        f"- Building utilization (%): {overview.get('building_utilization_pct', 0)}\n\n"
+        f"Conflicts detail (first 10):\n{_format_conflict_rows(conflicts, limit=10)}\n\n"
+        f"Schedule rows (CSV excerpt):\n{sample_rows.to_csv(index=False)}"
+    )
 
 
 def _build_saved_schedule_name(original_filename):
@@ -376,26 +578,45 @@ def ai_agent_view():
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
-    if not has_genai:
-        return jsonify({"error": "google-generativeai module is not installed."}), 500
-        
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "API Key is missing. Please set GEMINI_API_KEY."}), 400
-        
     data = request.get_json()
-    message = data.get("message", "")
+    message = (data or {}).get("message", "")
     
     if not message:
         return jsonify({"error": "No message provided."}), 400
 
+    rooms, schedule, _ = get_data()
+
+    local_reply = _answer_from_local_data(message, rooms, schedule)
+    if local_reply:
+        return jsonify({"reply": local_reply})
+
+    if not has_genai:
+        return jsonify({
+            "reply": "I can answer direct schedule questions from CSV data (rooms, conflicts, availability). "
+                     "Try: 'What days have conflicts?' or 'Is room 1003 available on Monday at 12:00?'"
+        })
+
+    if not GEMINI_API_KEY:
+        return jsonify({
+            "reply": "I can still answer direct CSV-based questions, but generative fallback is disabled because GEMINI_API_KEY is missing."
+        })
+
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        # The user requested 2.5 Flash
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        # We can pass some basic context about the schedule here if we want!
-        # For this prototype, we'll just do a standard chat.
-        response = model.generate_content(message)
+        model = genai.GenerativeModel(
+            'gemini-2.5-flash',
+            system_instruction=CHATBOT_SYSTEM_INSTRUCTION,
+        )
+
+        context = _build_chat_context(rooms, schedule)
+        prompt = (
+            "Answer using the provided website dataset.\n"
+            "If the question asks for conflicts/availability, give a direct answer and include exact room/day/time.\n"
+            "If data is insufficient, say exactly what is missing.\n\n"
+            f"{context}\n\n"
+            f"User question: {message}"
+        )
+        response = model.generate_content(prompt)
         
         return jsonify({"reply": response.text})
     except Exception as e:

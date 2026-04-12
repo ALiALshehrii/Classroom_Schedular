@@ -142,7 +142,16 @@
   </main>
 
   <button type="button" class="floating-ai-btn" aria-label="Open AI chat" data-bs-toggle="modal" data-bs-target="#aiChatModal">
-    🤖
+    <svg class="gemini-logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="geminiGradient" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#4285F4" />
+          <stop offset="0.5" stop-color="#8E63F8" />
+          <stop offset="1" stop-color="#34A853" />
+        </linearGradient>
+      </defs>
+      <path fill="url(#geminiGradient)" d="M12 2.5c1.4 4.2 4.8 7.6 9 9.5-4.2 1.9-7.6 5.3-9 9.5-1.4-4.2-4.8-7.6-9-9.5 4.2-1.9 7.6-5.3 9-9.5Z"/>
+    </svg>
   </button>
 
   <div class="modal fade" id="aiChatModal" tabindex="-1" aria-labelledby="aiChatModalLabel" aria-hidden="true">

@@ -459,6 +459,12 @@ a {
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
+.gemini-logo {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 .floating-ai-btn:hover,
 .floating-ai-btn:focus {
   transform: translateY(-2px);
@@ -673,6 +679,11 @@ a {
     width: 50px;
     height: 50px;
     font-size: 1.4rem;
+  }
+
+  .gemini-logo {
+    width: 24px;
+    height: 24px;
   }
 
   .ai-chat-modal-dialog {
