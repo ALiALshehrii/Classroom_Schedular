@@ -11,6 +11,17 @@
     <form method="get" action="{{ url_for('schedule_view') }}">
         <div class="filter-bar">
             <div>
+                <label>Global Search</label>
+                <input
+                    type="text"
+                    name="q"
+                    class="form-control"
+                    placeholder="CRN, course, instructor, room..."
+                    value="{{ search_query }}"
+                >
+            </div>
+
+            <div>
                 <label>Day</label>
                 <select name="day" class="form-select">
                     <option value="all" {% if day_filter=='all' %}selected{% endif %}>All Days</option>
@@ -50,8 +61,28 @@
                 </select>
             </div>
 
+            <div>
+                <label>Floor</label>
+                <select name="floor" class="form-select">
+                    <option value="all" {% if floor_filter=='all' %}selected{% endif %}>All Floors</option>
+                    {% for floor in floors %}
+                    <option value="{{ floor }}" {% if floor_filter==(floor|string) %}selected{% endif %}>Floor {{ floor }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Status</label>
+                <select name="status" class="form-select">
+                    <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Statuses</option>
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {% if status_filter==status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="d-flex gap-2 align-items-end">
-                <button type="submit" class="btn btn-dt-primary">Search</button>
+                <button type="submit" class="btn btn-dt-primary">Apply</button>
                 <a href="{{ url_for('schedule_view') }}" class="btn btn-dt-secondary">Reset</a>
             </div>
         </div>

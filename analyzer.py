@@ -676,7 +676,9 @@ def find_available_slots(
       3) Less busy time slot first
     """
     preferred_time = None if preferred_time in (None, "", "Any") else preferred_time
+    room_type = None if room_type in (None, "", "Any") else room_type
     preferred_room = None if preferred_room in (None, "", "Any") else str(preferred_room)
+    day_options, time_slots = _get_schedule_dimensions(schedule_df)
 
     rooms = rooms_df.copy()
     if room_type:
@@ -687,6 +689,11 @@ def find_available_slots(
     if rooms.empty:
         return []
 
+    schedule_capacity_by_room = (
+        schedule_df.groupby("Room_ID")["Capacity"].max().to_dict()
+        if not schedule_df.empty else {}
+    )
+
     instructor_busy = set()
     if instructor:
         instructor_rows = schedule_df[schedule_df["Instructor"] == instructor]
@@ -695,20 +702,23 @@ def find_available_slots(
         )
 
     time_busyness = schedule_df.groupby("Time").size().to_dict()
-    day_order = {d: i for i, d in enumerate(DAY_OPTIONS)}
+    day_order = {d: i for i, d in enumerate(day_options)}
 
     suggestions = []
     for _, room in rooms.iterrows():
         room_id = str(room["Room_ID"])
         floor = int(room["Floor"])
-        capacity = int(room["Capacity"])
+        room_capacity = int(room["Capacity"])
+        schedule_capacity = int(schedule_capacity_by_room.get(room_id, 0))
+        # Handle placeholder capacities in rooms.csv by trusting schedule capacity when larger.
+        capacity = max(room_capacity, schedule_capacity)
         slack = capacity - int(num_students)
 
         if slack < 0:
             continue
 
-        for day in DAY_OPTIONS:
-            for time in TIME_SLOTS:
+        for day in day_options:
+            for time in time_slots:
                 if preferred_time and time != preferred_time:
                     continue
                 if (day, time) in instructor_busy:

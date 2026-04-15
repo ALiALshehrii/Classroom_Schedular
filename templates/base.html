@@ -82,6 +82,7 @@
           </div>
           <div class="modal-body">
             <p class="text-muted small mb-3">Import a schedule only. The current rooms file stays unchanged.</p>
+            <p class="text-muted small mb-3">Validator checks missing columns, time/day formats, duplicate CRNs, and room mismatches before applying.</p>
             <div class="mb-3">
               <span class="form-label d-block">Schedule Source</span>
               <div class="btn-group w-100" role="group" aria-label="Choose schedule source">
@@ -193,14 +194,14 @@
     </div>
   </div>
 
-  <footer class="dt-footer position-relative">
-    <div class="position-absolute start-0 top-50 translate-middle-y ps-4">
+  <footer class="dt-footer">
+    <div class="dt-footer-left">
       <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary footer-theme-btn">
         🌙 Dark
       </button>
     </div>
-    2026 - Classroom Scheduler Prototype
-    <div class="position-absolute end-0 top-50 translate-middle-y pe-4">
+    <div class="dt-footer-center">2026 - Classroom Scheduler Prototype</div>
+    <div class="dt-footer-right">
       <a href="{{ url_for('about_twin_view') }}"
         class="text-decoration-none {% if request.endpoint == 'about_twin_view' %}fw-bold text-dark{% endif %}"
         style="color: inherit;">About Twin</a>
@@ -275,6 +276,7 @@
       const aiChatMessages = document.getElementById('aiChatMessages');
       const aiTypingIndicator = document.getElementById('aiTypingIndicator');
       const aiSendBtn = document.getElementById('aiSendBtn');
+      const aiChatHistory = [];
 
       if (!aiChatForm || !aiMessageInput || !aiChatMessages || !aiTypingIndicator || !aiSendBtn) {
         return;
@@ -288,12 +290,18 @@
         aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
       };
 
+      const initialAiText = aiChatMessages.querySelector('.ai-chat-message-ai')?.textContent?.trim();
+      if (initialAiText) {
+        aiChatHistory.push({ role: 'assistant', content: initialAiText });
+      }
+
       aiChatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const message = aiMessageInput.value.trim();
         if (!message) return;
 
         addAiMessage(message, true);
+        aiChatHistory.push({ role: 'user', content: message });
         aiMessageInput.value = '';
         aiMessageInput.disabled = true;
         aiSendBtn.disabled = true;
@@ -302,19 +310,28 @@
 
         try {
           const response = await fetch('{{ url_for("api_chat") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-          });
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message,
+                history: aiChatHistory.slice(-12)
+              })
+            });
 
           const data = await response.json();
-          if (response.ok) {
-            addAiMessage(data.reply || 'No response returned.', false);
-          } else {
-            addAiMessage(`Error: ${data.error || 'Unknown error'}`, false);
-          }
-        } catch (err) {
-          addAiMessage('Network error occurred. Please try again.', false);
+            if (response.ok) {
+              const reply = data.reply || 'No response returned.';
+              addAiMessage(reply, false);
+              aiChatHistory.push({ role: 'assistant', content: reply });
+            } else {
+              const reply = `Error: ${data.error || 'Unknown error'}`;
+              addAiMessage(reply, false);
+              aiChatHistory.push({ role: 'assistant', content: reply });
+            }
+          } catch (err) {
+          const reply = 'Network error occurred. Please try again.';
+          addAiMessage(reply, false);
+          aiChatHistory.push({ role: 'assistant', content: reply });
         } finally {
           aiTypingIndicator.style.display = 'none';
           aiMessageInput.disabled = false;

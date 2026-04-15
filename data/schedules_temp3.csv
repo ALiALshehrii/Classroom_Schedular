@@ -1,0 +1,67 @@
+CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrolled,Status
+53001,CS201,Programming II,Ali,Sun,08:00-09:30,1001,Classroom,1,1,normal
+53002,CS202,Data Structures,Sara,Sun,10:00-11:30,1001,Classroom,1,2,normal
+53003,CS203,Computer Organization,Omar,Sun,12:00-13:30,1002,Classroom,1,0,normal
+53004,CS204,Operating Systems,Hassan,Sun,14:00-15:30,1002,Classroom,1,1,normal
+53005,CS205,Database Systems,Mona,Mon,08:00-09:30,1003,Classroom,1,1,normal
+53006,CS206,Computer Networks,Fahad,Mon,10:00-11:30,1003,Classroom,1,1,normal
+53007,CS207,Software Engineering,Nora,Mon,12:00-13:30,1004,Classroom,1,1,normal
+53008,CS208,Web Development,Lina,Mon,14:00-15:30,1004,Classroom,1,2,normal
+53009,CS209,AI Fundamentals,Yousef,Tue,08:00-09:30,1005,Classroom,1,1,normal
+53010,CS210,Information Security,Aisha,Tue,10:00-11:30,1005,Classroom,1,0,normal
+53011,CS211,Cloud Computing,Khaled,Tue,12:00-13:30,1006,Classroom,1,1,normal
+53012,CS212,HCI,Rana,Tue,14:00-15:30,1006,Classroom,1,1,normal
+53013,CS213,Machine Learning,Nader,Wed,08:00-09:30,1007,Classroom,1,1,normal
+53014,CS214,Digital Ethics,Noor,Wed,10:00-11:30,1007,Classroom,1,1,normal
+53015,CS215,Mobile Development,Salem,Wed,12:00-13:30,1008,Classroom,1,2,normal
+53016,CS216,Data Mining,Amal,Wed,14:00-15:30,1008,Classroom,1,1,normal
+53017,CS217,Parallel Computing,Ali,Thu,08:00-09:30,1009,Classroom,1,0,normal
+53018,CS218,System Analysis,Sara,Thu,10:00-11:30,1009,Classroom,1,1,normal
+53019,CS219,Distributed Systems,Omar,Thu,12:00-13:30,1010,Classroom,1,1,normal
+53020,CS220,UI/UX Design,Hassan,Thu,14:00-15:30,1010,Classroom,1,1,normal
+53021,CS221,Programming II,Ali,Sun,08:00-09:30,2001,Classroom,2,2,normal
+53022,CS222,Data Structures,Sara,Sun,10:00-11:30,2001,Classroom,2,3,normal
+53023,CS223,Computer Organization,Omar,Sun,12:00-13:30,2002,Classroom,2,1,normal
+53024,CS224,Operating Systems,Hassan,Sun,14:00-15:30,2002,Classroom,2,2,normal
+53025,CS225,Database Systems,Mona,Mon,08:00-09:30,2003,Classroom,2,1,normal
+53026,CS226,Computer Networks,Fahad,Mon,10:00-11:30,2003,Classroom,2,0,normal
+53027,CS227,Software Engineering,Nora,Mon,12:00-13:30,2004,Classroom,2,2,normal
+53028,CS228,Web Development,Lina,Mon,14:00-15:30,2004,Classroom,2,1,normal
+53029,CS229,AI Fundamentals,Yousef,Tue,08:00-09:30,2005,Classroom,2,1,normal
+53030,CS230,Information Security,Aisha,Tue,10:00-11:30,2005,Classroom,2,2,normal
+53031,CS231,Cloud Computing,Khaled,Tue,12:00-13:30,2006,Classroom,2,1,normal
+53032,CS232,HCI,Rana,Tue,14:00-15:30,2006,Classroom,2,1,normal
+53033,CS233,Machine Learning,Nader,Wed,08:00-09:30,2007,Classroom,2,3,normal
+53034,CS234,Digital Ethics,Noor,Wed,10:00-11:30,2007,Classroom,2,1,normal
+53035,CS235,Mobile Development,Salem,Wed,12:00-13:30,2008,Classroom,2,0,normal
+53036,CS236,Data Mining,Amal,Wed,14:00-15:30,2008,Classroom,2,2,normal
+53037,CS237,Parallel Computing,Ali,Thu,08:00-09:30,2009,Classroom,2,1,normal
+53038,CS238,System Analysis,Sara,Thu,10:00-11:30,2009,Classroom,2,1,normal
+53039,CS239,Distributed Systems,Omar,Thu,12:00-13:30,2010,Classroom,2,2,normal
+53040,CS240,UI/UX Design,Hassan,Thu,14:00-15:30,2010,Classroom,2,1,normal
+53041,CS241,Programming II,Ali,Sun,08:00-09:30,3001,Classroom,3,3,normal
+53042,CS242,Data Structures,Sara,Sun,10:00-11:30,3001,Classroom,3,2,normal
+53043,CS243,Computer Organization,Omar,Sun,12:00-13:30,3002,Classroom,3,2,normal
+53044,CS244,Operating Systems,Hassan,Sun,14:00-15:30,3002,Classroom,3,0,normal
+53045,CS245,Database Systems,Mona,Mon,08:00-09:30,3003,Classroom,3,2,normal
+53046,CS246,Computer Networks,Fahad,Mon,10:00-11:30,3003,Classroom,3,4,normal
+53047,CS247,Software Engineering,Nora,Mon,12:00-13:30,3004,Classroom,3,3,normal
+53048,CS248,Web Development,Lina,Mon,14:00-15:30,3004,Classroom,3,2,normal
+53049,CS249,AI Fundamentals,Yousef,Tue,08:00-09:30,3005,Classroom,3,2,normal
+53050,CS250,Information Security,Aisha,Tue,10:00-11:30,3005,Classroom,3,3,normal
+53051,CS251,Cloud Computing,Khaled,Tue,12:00-13:30,3006,Classroom,3,2,normal
+53052,CS252,HCI,Rana,Tue,14:00-15:30,3006,Classroom,3,2,normal
+53053,CS253,Machine Learning,Nader,Wed,08:00-09:30,3007,Classroom,3,0,normal
+53054,CS254,Digital Ethics,Noor,Wed,10:00-11:30,3007,Classroom,3,2,normal
+53055,CS255,Mobile Development,Salem,Wed,12:00-13:30,3008,Classroom,3,2,normal
+53056,CS256,Data Mining,Amal,Wed,14:00-15:30,3008,Classroom,3,3,normal
+53057,CS257,Parallel Computing,Ali,Thu,08:00-09:30,3009,Classroom,3,2,normal
+53058,CS258,System Analysis,Sara,Thu,10:00-11:30,3009,Classroom,3,4,normal
+53059,CS259,Distributed Systems,Omar,Thu,12:00-13:30,3010,Classroom,3,3,normal
+53060,CS260,UI/UX Design,Hassan,Thu,14:00-15:30,3010,Classroom,3,2,normal
+53061,CS261,Programming II Lab,Hassan,Sun,08:00-09:30,1001,Classroom,1,2,normal
+53062,CS262,Data Structures Lab,Mona,Mon,12:00-13:30,1004,Classroom,1,0,normal
+53063,CS263,Computer Organization Lab,Fahad,Wed,10:00-11:30,1007,Classroom,1,2,normal
+53064,CS264,Operating Systems Lab,Nora,Sun,08:00-09:30,2001,Classroom,2,0,normal
+53065,CS265,Database Systems Lab,Lina,Tue,14:00-15:30,2006,Classroom,2,3,normal
+53066,CS266,Computer Networks Lab,Yousef,Sun,12:00-13:30,3002,Classroom,3,0,normal

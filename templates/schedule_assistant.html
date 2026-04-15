@@ -41,10 +41,11 @@
                 <div class="col-md-3">
                     <label class="form-label">Room Type Needed</label>
                     <select name="room_type" class="form-select" required>
-                        <option value="Lecture Hall" {% if selected_room_type=='Lecture Hall' %}selected{% endif %}>
-                            Lecture Hall</option>
-                        <option value="Computer Lab" {% if selected_room_type=='Computer Lab' %}selected{% endif %}>
-                            Computer Lab</option>
+                        {% for room_type in room_type_options %}
+                        <option value="{{ room_type }}" {% if selected_room_type==room_type %}selected{% endif %}>
+                            {{ room_type }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">

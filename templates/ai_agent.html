@@ -224,7 +224,9 @@
         <div class="chat-messages" id="chatMessages">
             <div class="chat-message message-ai">
                 👋 Hello! I'm your Scheduling Assistant. I can help you analyze the schedules, find available rooms, or
-                troubleshoot conflicts. What would you like to know?
+                troubleshoot conflicts.
+                Try: "Is room 3007 free on Tuesday at 10:00?", "What conflicts happen on Wednesday?", or
+                "Show all sections in room 2006."
             </div>
         </div>
 
@@ -259,6 +261,7 @@
     const chatMessages = document.getElementById('chatMessages');
     const typingIndicator = document.getElementById('typingIndicator');
     const sendBtn = document.getElementById('sendBtn');
+    const chatHistory = [];
 
     function addMessage(content, isUser) {
         const msgDiv = document.createElement('div');
@@ -274,6 +277,11 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    const initialAssistantMessage = chatMessages.querySelector('.message-ai')?.textContent?.trim();
+    if (initialAssistantMessage) {
+        chatHistory.push({ role: 'assistant', content: initialAssistantMessage });
+    }
+
     if (chatForm) {
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -283,6 +291,7 @@
 
             // Add user message
             addMessage(message, true);
+            chatHistory.push({ role: 'user', content: message });
             messageInput.value = '';
 
             // Disable input and show typing
@@ -298,7 +307,10 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({
+                        message: message,
+                        history: chatHistory.slice(-12)
+                    })
                 });
 
                 const data = await response.json();
@@ -307,13 +319,19 @@
                 typingIndicator.style.display = 'none';
 
                 if (response.ok) {
-                    addMessage(data.reply, false);
+                    const reply = data.reply || 'No response returned.';
+                    addMessage(reply, false);
+                    chatHistory.push({ role: 'assistant', content: reply });
                 } else {
-                    addMessage('Sorry, I encountered an error: ' + (data.error || 'Unknown error'), false);
+                    const reply = 'Sorry, I encountered an error: ' + (data.error || 'Unknown error');
+                    addMessage(reply, false);
+                    chatHistory.push({ role: 'assistant', content: reply });
                 }
             } catch (err) {
                 typingIndicator.style.display = 'none';
-                addMessage('Network error occurred. Please try again.', false);
+                const reply = 'Network error occurred. Please try again.';
+                addMessage(reply, false);
+                chatHistory.push({ role: 'assistant', content: reply });
             } finally {
                 messageInput.disabled = false;
                 sendBtn.disabled = false;

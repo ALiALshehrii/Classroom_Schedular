@@ -35,6 +35,94 @@
 
     <div class="dt-table-wrapper mb-4">
         <div class="table-header">
+            <h5 class="table-title">Smart Action Queue</h5>
+            <span class="muted-label">{{ smart_recommendations | length }} prioritized actions</span>
+        </div>
+        {% if smart_recommendations %}
+        <div class="table-responsive">
+            <table class="table dt-table mb-0 rec-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>CRN</th>
+                        <th>Course</th>
+                        <th>Slot</th>
+                        <th>Move</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in smart_recommendations %}
+                    <tr class="rec-row rec-actionable">
+                        <td>{{ rec.type|title }}</td>
+                        <td>{{ rec.crn }}</td>
+                        <td>{{ rec.course_name }}</td>
+                        <td>{{ rec.slot }}</td>
+                        <td>R{{ rec.current_room }} → R{{ rec.suggested_room }}</td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-dt-primary preview-btn"
+                                    data-rec-type="{{ rec.type }}"
+                                    data-crn="{{ rec.crn }}"
+                                >
+                                    Preview Impact
+                                </button>
+                                <a
+                                    href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
+                                    class="btn btn-sm btn-dt-secondary"
+                                >
+                                    Open in Simulation
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h5>No actionable items</h5>
+            <p>Current schedule does not need immediate optimization moves.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="conflict-card mb-4 recommendation-preview-panel" id="recommendationPreviewPanel">
+        <div class="recommendations-impact-title">Recommendation Impact Preview</div>
+        <div class="muted-label mb-3" id="previewSummary">Choose any “Preview Impact” action to compare before/after metrics.</div>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <div class="preview-metric-card">
+                    <div class="muted-label">Conflict Slots</div>
+                    <div class="preview-metric-value" id="previewConflicts">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="preview-metric-card">
+                    <div class="muted-label">Overcrowded</div>
+                    <div class="preview-metric-value" id="previewOvercrowded">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="preview-metric-card">
+                    <div class="muted-label">Underutilized</div>
+                    <div class="preview-metric-value" id="previewUnderutilized">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="preview-metric-card">
+                    <div class="muted-label">Avg Utilization</div>
+                    <div class="preview-metric-value" id="previewUtilization">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dt-table-wrapper mb-4">
+        <div class="table-header">
             <h5 class="table-title">Overcrowded Recommendations</h5>
             <span class="muted-label">{{ overcrowded_recommendations | length }} rows</span>
         </div>
@@ -59,7 +147,27 @@
                         <td>{{ rec.day }} / {{ rec.time }}</td>
                         <td>R{{ rec.current_room }} ({{ rec.enrolled }}/{{ rec.current_cap }})</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_cap }}){% else %}-{% endif %}</td>
-                        <td>{{ rec.recommendation_reason }}</td>
+                        <td>
+                            <div>{{ rec.recommendation_reason }}</div>
+                            {% if rec.actionable %}
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-dt-primary preview-btn"
+                                    data-rec-type="overcrowded"
+                                    data-crn="{{ rec.crn }}"
+                                >
+                                    Preview Impact
+                                </button>
+                                <a
+                                    href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
+                                    class="btn btn-sm btn-dt-secondary"
+                                >
+                                    Open in Simulation
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -99,7 +207,27 @@
                         <td>{{ rec.day }} / {{ rec.time }}</td>
                         <td>R{{ rec.current_room }} ({{ rec.current_util_pct }}%)</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_util_pct }}%){% else %}-{% endif %}</td>
-                        <td>{{ rec.action }}</td>
+                        <td>
+                            <div>{{ rec.action }}</div>
+                            {% if rec.actionable %}
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-dt-primary preview-btn"
+                                    data-rec-type="underutilized"
+                                    data-crn="{{ rec.crn }}"
+                                >
+                                    Preview Impact
+                                </button>
+                                <a
+                                    href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
+                                    class="btn btn-sm btn-dt-secondary"
+                                >
+                                    Open in Simulation
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -139,7 +267,27 @@
                         <td>{{ rec.day }} / {{ rec.time }}</td>
                         <td>R{{ rec.current_room }}</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }}{% else %}-{% endif %}</td>
-                        <td>{{ rec.action }}</td>
+                        <td>
+                            <div>{{ rec.action }}</div>
+                            {% if rec.actionable %}
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-dt-primary preview-btn"
+                                    data-rec-type="conflict"
+                                    data-crn="{{ rec.crn }}"
+                                >
+                                    Preview Impact
+                                </button>
+                                <a
+                                    href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
+                                    class="btn btn-sm btn-dt-secondary"
+                                >
+                                    Open in Simulation
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -153,4 +301,76 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    (() => {
+        const previewButtons = document.querySelectorAll('.preview-btn');
+        if (!previewButtons.length) return;
+
+        const summaryEl = document.getElementById('previewSummary');
+        const conflictsEl = document.getElementById('previewConflicts');
+        const overcrowdedEl = document.getElementById('previewOvercrowded');
+        const underutilizedEl = document.getElementById('previewUnderutilized');
+        const utilEl = document.getElementById('previewUtilization');
+
+        const formatDelta = (value, suffix = '') => {
+            const num = Number(value);
+            if (Number.isNaN(num)) return '-';
+            if (num > 0) return `(+${num}${suffix})`;
+            if (num < 0) return `(${num}${suffix})`;
+            return '(0)';
+        };
+
+        const setLoading = () => {
+            summaryEl.textContent = 'Calculating preview...';
+            conflictsEl.textContent = '...';
+            overcrowdedEl.textContent = '...';
+            underutilizedEl.textContent = '...';
+            utilEl.textContent = '...';
+        };
+
+        previewButtons.forEach((button) => {
+            button.addEventListener('click', async () => {
+                const recType = button.dataset.recType;
+                const crn = button.dataset.crn;
+                if (!recType || !crn) return;
+                setLoading();
+
+                try {
+                    const response = await fetch('{{ url_for("recommendation_preview_api") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rec_type: recType, crn: crn })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Preview failed');
+                    }
+                    if (!data.actionable) {
+                        summaryEl.textContent = data.reason || data.message || 'This recommendation is not actionable.';
+                        conflictsEl.textContent = '-';
+                        overcrowdedEl.textContent = '-';
+                        underutilizedEl.textContent = '-';
+                        utilEl.textContent = '-';
+                        return;
+                    }
+
+                    summaryEl.textContent = `CRN ${data.crn} (${data.course_name}): move Room ${data.current_room} → ${data.suggested_room} on ${data.day} at ${data.time}.`;
+                    conflictsEl.textContent = `${data.before.conflicts} → ${data.after.conflicts} ${formatDelta(data.delta.conflicts)}`;
+                    overcrowdedEl.textContent = `${data.before.overcrowded} → ${data.after.overcrowded} ${formatDelta(data.delta.overcrowded)}`;
+                    underutilizedEl.textContent = `${data.before.underutilized} → ${data.after.underutilized} ${formatDelta(data.delta.underutilized)}`;
+                    utilEl.textContent = `${data.before.avg_utilization}% → ${data.after.avg_utilization}% ${formatDelta(data.delta.avg_utilization, '%')}`;
+                } catch (error) {
+                    summaryEl.textContent = `Preview error: ${error.message}`;
+                    conflictsEl.textContent = '-';
+                    overcrowdedEl.textContent = '-';
+                    underutilizedEl.textContent = '-';
+                    utilEl.textContent = '-';
+                }
+            });
+        });
+    })();
+</script>
 {% endblock %}
