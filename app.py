@@ -49,6 +49,7 @@ Rules:
 SCHEDULE_COLUMNS = pd.read_csv(analyzer.SCHEDULE_CSV, nrows=0).columns.tolist()
 ROOMS_COLUMNS = pd.read_csv(analyzer.ROOMS_CSV, nrows=0).columns.tolist()
 DATA_DIR = os.path.join(analyzer.BASE_DIR, "data")
+ACTIVE_SCHEDULE_POINTER = os.path.join(DATA_DIR, ".active_schedule")
 DAY_ALIAS_TO_CANONICAL = {
     "sun": "Sun",
     "sunday": "Sun",
@@ -76,6 +77,7 @@ def _get_gemini_api_key() -> str:
 
 
 def _get_schedule_datasets():
+    active_dataset = _get_active_schedule_dataset()
     datasets = []
     try:
         csv_files = sorted(
@@ -90,11 +92,46 @@ def _get_schedule_datasets():
             {
                 "id": schedule_file,
                 "schedule_file": schedule_file,
-                "is_active": schedule_file == "schedule.csv",
+                "is_active": schedule_file == active_dataset,
                 "label": schedule_file,
             }
         )
     return datasets
+
+
+def _normalize_schedule_dataset_name(name: str) -> Optional[str]:
+    candidate = os.path.basename(str(name or "").strip())
+    if not candidate:
+        return None
+    if not candidate.lower().endswith(".csv"):
+        return None
+    if not candidate.startswith("schedule"):
+        return None
+    full_path = os.path.join(DATA_DIR, candidate)
+    if not os.path.isfile(full_path):
+        return None
+    return candidate
+
+
+def _get_active_schedule_dataset() -> str:
+    default_name = "schedule.csv"
+    if not os.path.exists(ACTIVE_SCHEDULE_POINTER):
+        return default_name
+    try:
+        with open(ACTIVE_SCHEDULE_POINTER, "r", encoding="utf-8") as handle:
+            stored = handle.read().strip()
+    except OSError:
+        return default_name
+
+    normalized = _normalize_schedule_dataset_name(stored)
+    return normalized or default_name
+
+
+def _set_active_schedule_dataset(dataset_name: str) -> None:
+    normalized = _normalize_schedule_dataset_name(dataset_name)
+    target = normalized or "schedule.csv"
+    with open(ACTIVE_SCHEDULE_POINTER, "w", encoding="utf-8") as handle:
+        handle.write(target)
 
 
 def _sanitize_chat_history(raw_history) -> list[dict]:
@@ -186,6 +223,34 @@ def get_data():
     schedule = analyzer.load_schedule()
     twin_state = analyzer.build_twin_state(rooms, schedule)
     return rooms, schedule, twin_state
+
+
+def _load_schedule_from_dataset(dataset_name: str) -> Optional[pd.DataFrame]:
+    normalized = _normalize_schedule_dataset_name(dataset_name)
+    if not normalized:
+        return None
+    dataset_path = os.path.join(DATA_DIR, normalized)
+    try:
+        df = pd.read_csv(dataset_path)
+    except Exception:
+        return None
+
+    required_columns = {"Room_ID", "CRN", "Day", "Time", "Enrolled", "Capacity"}
+    if not required_columns.issubset(set(df.columns)):
+        return None
+
+    df["Room_ID"] = df["Room_ID"].astype(str)
+    df["CRN"] = df["CRN"].astype(str)
+    df["Day"] = df["Day"].astype(str).str.strip()
+    df["Time"] = df["Time"].astype(str).str.strip()
+    df["Capacity"] = pd.to_numeric(df["Capacity"], errors="coerce")
+    df["Enrolled"] = pd.to_numeric(df["Enrolled"], errors="coerce")
+    df = df.dropna(subset=["Capacity", "Enrolled"]).copy()
+    df["Capacity"] = df["Capacity"].astype(int)
+    df["Enrolled"] = df["Enrolled"].astype(int)
+    df["Status"] = df.apply(lambda row: _calc_status_label(int(row["Enrolled"]), int(row["Capacity"])), axis=1)
+    df["Utilization_Pct"] = ((df["Enrolled"] / df["Capacity"]) * 100).round(1)
+    return df
 
 
 def _extract_day(message: str) -> Optional[str]:
@@ -634,14 +699,32 @@ def import_schedule_csv():
 
     schedule_df = fixed_schedule_df[SCHEDULE_COLUMNS]
     rooms_df = rooms_df[ROOMS_COLUMNS]
-    schedule_df.to_csv(analyzer.SCHEDULE_CSV, index=False)
+
+    try:
+        schedule_df.to_csv(analyzer.SCHEDULE_CSV, index=False)
+    except OSError:
+        flash("Could not save the active schedule file (data/schedule.csv).", "danger")
+        return redirect(url_for("index"))
+
     if source_mode == "upload":
         saved_schedule_name = _build_saved_schedule_name(schedule_file.filename)
-        schedule_df.to_csv(os.path.join(DATA_DIR, saved_schedule_name), index=False)
+        saved_schedule_path = os.path.join(DATA_DIR, saved_schedule_name)
+        try:
+            schedule_df.to_csv(saved_schedule_path, index=False)
+            _set_active_schedule_dataset(saved_schedule_name)
+        except OSError:
+            flash("Schedule imported to data/schedule.csv, but saving the named copy failed.", "warning")
+    else:
+        selected_schedule_path = os.path.join(DATA_DIR, selected_data_schedule_id)
+        try:
+            schedule_df.to_csv(selected_schedule_path, index=False)
+        except OSError:
+            flash("Loaded dataset into data/schedule.csv, but updating the source dataset file failed.", "warning")
+        _set_active_schedule_dataset(selected_data_schedule_id)
 
     if source_mode == "data":
         flash(
-            f"Schedule {selected_data_schedule_id} loaded successfully. Rooms stayed unchanged and the site was rebuilt.",
+            f"Schedule {selected_data_schedule_id} loaded successfully and set as active. Rooms stayed unchanged and the site was rebuilt.",
             "success",
         )
     else:
@@ -822,6 +905,7 @@ def simulation_view():
 @app.route("/recommendations")
 def recommendations_view():
     rooms, schedule, twin_state = get_data()
+    active_schedule_dataset = _get_active_schedule_dataset()
     overcrowded_recommendations = analyzer.generate_recommendations(schedule, rooms)
     underutilized_recommendations = analyzer.generate_underutilized_recommendations(schedule, rooms)
     conflict_recommendations = analyzer.generate_conflict_recommendations(schedule, rooms)
@@ -872,7 +956,84 @@ def recommendations_view():
         conflict_recommendations=conflict_recommendations,
         smart_recommendations=smart_recommendations,
         impact=impact,
+        active_schedule_dataset=active_schedule_dataset,
     )
+
+
+def _get_recommendations_by_type(rec_type: str, schedule: pd.DataFrame, rooms: pd.DataFrame) -> list[dict]:
+    if rec_type == "overcrowded":
+        return analyzer.generate_recommendations(schedule, rooms)
+    if rec_type == "underutilized":
+        return analyzer.generate_underutilized_recommendations(schedule, rooms)
+    if rec_type == "conflict":
+        return analyzer.generate_conflict_recommendations(schedule, rooms)
+    return []
+
+
+@app.route("/recommendations/apply", methods=["POST"])
+def apply_recommendation_change():
+    rec_type = str(request.form.get("rec_type", "")).strip().lower()
+    crn = str(request.form.get("crn", "")).strip()
+    requested_dataset = str(request.form.get("schedule_dataset", "")).strip()
+    if rec_type not in {"overcrowded", "underutilized", "conflict"} or not crn:
+        flash("Invalid recommendation request.", "danger")
+        return redirect(url_for("recommendations_view"))
+
+    active_dataset = _normalize_schedule_dataset_name(requested_dataset) or _get_active_schedule_dataset()
+    _set_active_schedule_dataset(active_dataset)
+
+    rooms = analyzer.load_rooms()
+    schedule = _load_schedule_from_dataset(active_dataset)
+    if schedule is None:
+        flash(f"Could not load active dataset ({active_dataset}) for applying the change.", "danger")
+        return redirect(url_for("recommendations_view"))
+
+    recommendations = _get_recommendations_by_type(rec_type, schedule, rooms)
+    rec = next((item for item in recommendations if str(item.get("crn")) == crn), None)
+    if not rec:
+        flash("Recommendation not found for this CRN.", "danger")
+        return redirect(url_for("recommendations_view"))
+
+    target_room = str(rec.get("suggested_room", "")).strip()
+    if not rec.get("actionable") or not target_room or target_room in {
+        "No alternative available",
+        "No suitable smaller room",
+        "No free room",
+        "-",
+    }:
+        reason = rec.get("recommendation_reason") or rec.get("action") or "No valid target room available."
+        flash(f"Change was not applied. {reason}", "warning")
+        return redirect(url_for("recommendations_view"))
+
+    preview_schedule = _build_preview_schedule(schedule, rooms, crn=crn, target_room=target_room)
+    if preview_schedule is None:
+        flash("Could not apply this change due to invalid CRN or room.", "danger")
+        return redirect(url_for("recommendations_view"))
+
+    previous_room = str(schedule[schedule["CRN"].astype(str) == crn].iloc[0]["Room_ID"])
+    schedule_to_save = preview_schedule[SCHEDULE_COLUMNS]
+    active_path = os.path.join(DATA_DIR, active_dataset)
+    try:
+        schedule_to_save.to_csv(active_path, index=False)
+    except OSError:
+        flash(f"Could not save change to imported dataset ({active_dataset}).", "danger")
+        return redirect(url_for("recommendations_view"))
+
+    if os.path.abspath(active_path) != os.path.abspath(analyzer.SCHEDULE_CSV):
+        try:
+            schedule_to_save.to_csv(analyzer.SCHEDULE_CSV, index=False)
+        except OSError:
+            flash(
+                f"Applied change to imported dataset ({active_dataset}), but failed to sync schedule.csv.",
+                "warning",
+            )
+            return redirect(url_for("recommendations_view"))
+
+    flash(
+        f"Applied change for CRN {crn}: room {previous_room} → room {target_room} in {active_dataset}.",
+        "success",
+    )
+    return redirect(url_for("recommendations_view"))
 
 
 @app.route("/api/recommendation-preview", methods=["POST"])
@@ -884,12 +1045,7 @@ def recommendation_preview_api():
         return jsonify({"error": "Invalid recommendation request."}), 400
 
     rooms, schedule, _ = get_data()
-    if rec_type == "overcrowded":
-        recommendations = analyzer.generate_recommendations(schedule, rooms)
-    elif rec_type == "underutilized":
-        recommendations = analyzer.generate_underutilized_recommendations(schedule, rooms)
-    else:
-        recommendations = analyzer.generate_conflict_recommendations(schedule, rooms)
+    recommendations = _get_recommendations_by_type(rec_type, schedule, rooms)
 
     rec = next((item for item in recommendations if str(item.get("crn")) == crn), None)
     if not rec:

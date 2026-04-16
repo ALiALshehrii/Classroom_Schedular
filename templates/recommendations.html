@@ -61,14 +61,14 @@
                         <td>R{{ rec.current_room }} → R{{ rec.suggested_room }}</td>
                         <td>
                             <div class="d-flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-dt-primary preview-btn"
-                                    data-rec-type="{{ rec.type }}"
-                                    data-crn="{{ rec.crn }}"
-                                >
-                                    Preview Impact
-                                </button>
+                                <form method="post" action="{{ url_for('apply_recommendation_change') }}">
+                                    <input type="hidden" name="rec_type" value="{{ rec.type }}">
+                                    <input type="hidden" name="crn" value="{{ rec.crn }}">
+                                    <input type="hidden" name="schedule_dataset" value="{{ active_schedule_dataset }}">
+                                    <button type="submit" class="btn btn-sm btn-dt-primary">
+                                        Apply Change
+                                    </button>
+                                </form>
                                 <a
                                     href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
                                     class="btn btn-sm btn-dt-secondary"
@@ -88,37 +88,6 @@
             <p>Current schedule does not need immediate optimization moves.</p>
         </div>
         {% endif %}
-    </div>
-
-    <div class="conflict-card mb-4 recommendation-preview-panel" id="recommendationPreviewPanel">
-        <div class="recommendations-impact-title">Recommendation Impact Preview</div>
-        <div class="muted-label mb-3" id="previewSummary">Choose any “Preview Impact” action to compare before/after metrics.</div>
-        <div class="row g-2">
-            <div class="col-md-3">
-                <div class="preview-metric-card">
-                    <div class="muted-label">Conflict Slots</div>
-                    <div class="preview-metric-value" id="previewConflicts">-</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="preview-metric-card">
-                    <div class="muted-label">Overcrowded</div>
-                    <div class="preview-metric-value" id="previewOvercrowded">-</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="preview-metric-card">
-                    <div class="muted-label">Underutilized</div>
-                    <div class="preview-metric-value" id="previewUnderutilized">-</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="preview-metric-card">
-                    <div class="muted-label">Avg Utilization</div>
-                    <div class="preview-metric-value" id="previewUtilization">-</div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="dt-table-wrapper mb-4">
@@ -151,14 +120,14 @@
                             <div>{{ rec.recommendation_reason }}</div>
                             {% if rec.actionable %}
                             <div class="d-flex flex-wrap gap-2 mt-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-dt-primary preview-btn"
-                                    data-rec-type="overcrowded"
-                                    data-crn="{{ rec.crn }}"
-                                >
-                                    Preview Impact
-                                </button>
+                                <form method="post" action="{{ url_for('apply_recommendation_change') }}">
+                                    <input type="hidden" name="rec_type" value="overcrowded">
+                                    <input type="hidden" name="crn" value="{{ rec.crn }}">
+                                    <input type="hidden" name="schedule_dataset" value="{{ active_schedule_dataset }}">
+                                    <button type="submit" class="btn btn-sm btn-dt-primary">
+                                        Apply Change
+                                    </button>
+                                </form>
                                 <a
                                     href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
                                     class="btn btn-sm btn-dt-secondary"
@@ -211,14 +180,14 @@
                             <div>{{ rec.action }}</div>
                             {% if rec.actionable %}
                             <div class="d-flex flex-wrap gap-2 mt-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-dt-primary preview-btn"
-                                    data-rec-type="underutilized"
-                                    data-crn="{{ rec.crn }}"
-                                >
-                                    Preview Impact
-                                </button>
+                                <form method="post" action="{{ url_for('apply_recommendation_change') }}">
+                                    <input type="hidden" name="rec_type" value="underutilized">
+                                    <input type="hidden" name="crn" value="{{ rec.crn }}">
+                                    <input type="hidden" name="schedule_dataset" value="{{ active_schedule_dataset }}">
+                                    <button type="submit" class="btn btn-sm btn-dt-primary">
+                                        Apply Change
+                                    </button>
+                                </form>
                                 <a
                                     href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
                                     class="btn btn-sm btn-dt-secondary"
@@ -271,14 +240,14 @@
                             <div>{{ rec.action }}</div>
                             {% if rec.actionable %}
                             <div class="d-flex flex-wrap gap-2 mt-2">
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-dt-primary preview-btn"
-                                    data-rec-type="conflict"
-                                    data-crn="{{ rec.crn }}"
-                                >
-                                    Preview Impact
-                                </button>
+                                <form method="post" action="{{ url_for('apply_recommendation_change') }}">
+                                    <input type="hidden" name="rec_type" value="conflict">
+                                    <input type="hidden" name="crn" value="{{ rec.crn }}">
+                                    <input type="hidden" name="schedule_dataset" value="{{ active_schedule_dataset }}">
+                                    <button type="submit" class="btn btn-sm btn-dt-primary">
+                                        Apply Change
+                                    </button>
+                                </form>
                                 <a
                                     href="{{ url_for('simulation_view', crn=rec.crn, room_id=rec.suggested_room) }}"
                                     class="btn btn-sm btn-dt-secondary"
@@ -301,76 +270,4 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    (() => {
-        const previewButtons = document.querySelectorAll('.preview-btn');
-        if (!previewButtons.length) return;
-
-        const summaryEl = document.getElementById('previewSummary');
-        const conflictsEl = document.getElementById('previewConflicts');
-        const overcrowdedEl = document.getElementById('previewOvercrowded');
-        const underutilizedEl = document.getElementById('previewUnderutilized');
-        const utilEl = document.getElementById('previewUtilization');
-
-        const formatDelta = (value, suffix = '') => {
-            const num = Number(value);
-            if (Number.isNaN(num)) return '-';
-            if (num > 0) return `(+${num}${suffix})`;
-            if (num < 0) return `(${num}${suffix})`;
-            return '(0)';
-        };
-
-        const setLoading = () => {
-            summaryEl.textContent = 'Calculating preview...';
-            conflictsEl.textContent = '...';
-            overcrowdedEl.textContent = '...';
-            underutilizedEl.textContent = '...';
-            utilEl.textContent = '...';
-        };
-
-        previewButtons.forEach((button) => {
-            button.addEventListener('click', async () => {
-                const recType = button.dataset.recType;
-                const crn = button.dataset.crn;
-                if (!recType || !crn) return;
-                setLoading();
-
-                try {
-                    const response = await fetch('{{ url_for("recommendation_preview_api") }}', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ rec_type: recType, crn: crn })
-                    });
-                    const data = await response.json();
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Preview failed');
-                    }
-                    if (!data.actionable) {
-                        summaryEl.textContent = data.reason || data.message || 'This recommendation is not actionable.';
-                        conflictsEl.textContent = '-';
-                        overcrowdedEl.textContent = '-';
-                        underutilizedEl.textContent = '-';
-                        utilEl.textContent = '-';
-                        return;
-                    }
-
-                    summaryEl.textContent = `CRN ${data.crn} (${data.course_name}): move Room ${data.current_room} → ${data.suggested_room} on ${data.day} at ${data.time}.`;
-                    conflictsEl.textContent = `${data.before.conflicts} → ${data.after.conflicts} ${formatDelta(data.delta.conflicts)}`;
-                    overcrowdedEl.textContent = `${data.before.overcrowded} → ${data.after.overcrowded} ${formatDelta(data.delta.overcrowded)}`;
-                    underutilizedEl.textContent = `${data.before.underutilized} → ${data.after.underutilized} ${formatDelta(data.delta.underutilized)}`;
-                    utilEl.textContent = `${data.before.avg_utilization}% → ${data.after.avg_utilization}% ${formatDelta(data.delta.avg_utilization, '%')}`;
-                } catch (error) {
-                    summaryEl.textContent = `Preview error: ${error.message}`;
-                    conflictsEl.textContent = '-';
-                    overcrowdedEl.textContent = '-';
-                    underutilizedEl.textContent = '-';
-                    utilEl.textContent = '-';
-                }
-            });
-        });
-    })();
-</script>
 {% endblock %}
