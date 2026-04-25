@@ -12,19 +12,19 @@ CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrol
 53011,CS211,Cybersecurity,Abeer,Mon,08:00-09:30,2001,Lecture Hall,55,40,Normal
 53012,CS212,Discrete Mathematics,Yousef,Mon,10:00-11:30,2002,Lecture Hall,55,33,Normal
 53013,CS213,Calculus II,Huda,Tue,12:00-13:30,1001,Computer Lab,55,52,Normal
-53014,CS214,Physics for CS,Turki,Tue,14:00-15:30,2004,Lecture Hall,30,37,Overcrowded
+53014,CS214,Physics for CS,Turki,Tue,14:00-15:30,1005,Lecture Hall,40,37,Normal
 53015,CS215,Human-Computer Interaction,Reem,Tue,16:00-17:30,2005,Lecture Hall,50,10,Underutilized
 53016,CS216,Data Mining,Nawaf,Tue,08:00-09:30,2006,Computer Lab,45,14,Underutilized
 53017,CS217,Cloud Computing,Dalal,Tue,10:00-11:30,2007,Lecture Hall,30,25,Normal
 53018,CS218,Compiler Design,Majed,Tue,12:00-13:30,2008,Lecture Hall,30,20,Normal
-53019,CS219,Mobile Development,Amal,Wed,14:00-15:30,2009,Computer Lab,30,31,Overcrowded
+53019,CS219,Mobile Development,Amal,Wed,14:00-15:30,1007,Computer Lab,35,31,Normal
 53020,CS220,Information Security,Saad,Wed,16:00-17:30,2010,Lecture Hall,35,43,Overcrowded
 53021,CS221,Algorithms,Ali,Wed,08:00-09:30,3001,Lecture Hall,35,9,Underutilized
 53022,CS222,Numerical Methods,Sara,Wed,10:00-11:30,3002,Computer Lab,50,17,Underutilized
 53023,CS223,Computer Graphics,Omar,Wed,12:00-13:30,3003,Lecture Hall,50,39,Normal
 53024,CS224,Parallel Computing,Hassan,Wed,14:00-15:30,3004,Lecture Hall,30,17,Normal
 53025,CS225,Distributed Systems,Mona,Thu,16:00-17:30,3005,Computer Lab,50,59,Overcrowded
-53026,CS226,Natural Language Processing,Noura,Thu,08:00-09:30,3006,Lecture Hall,35,40,Overcrowded
+53026,CS226,Natural Language Processing,Noura,Thu,08:00-09:30,1005,Lecture Hall,40,40,Normal
 53027,CS227,Deep Learning,Khalid,Thu,10:00-11:30,3007,Lecture Hall,55,17,Underutilized
 53028,CS228,Systems Analysis,Rayan,Thu,12:00-13:30,3008,Computer Lab,55,16,Underutilized
 53029,CS229,IT Project Management,Lina,Sun,14:00-15:30,1004,Computer Lab,55,38,Normal
@@ -36,7 +36,7 @@ CRN,Course_Code,Course_Name,Instructor,Day,Time,Room_ID,Room_Type,Capacity,Enrol
 53035,CS235,Database Systems,Reem,Sun,16:00-17:30,1005,Lecture Hall,40,26,Normal
 53036,CS236,Networks I,Nawaf,Sun,08:00-09:30,1006,Lecture Hall,35,20,Normal
 53037,CS237,Software Engineering,Dalal,Tue,12:00-13:30,2003,Computer Lab,50,35,Normal
-53038,CS238,Artificial Intelligence,Majed,Mon,12:00-13:30,1008,Lecture Hall,35,37,Overcrowded
+53038,CS238,Artificial Intelligence,Majed,Mon,12:00-13:30,1005,Lecture Hall,40,37,Normal
 53039,CS239,Machine Learning,Amal,Mon,14:00-15:30,1009,Lecture Hall,55,14,Underutilized
 53040,CS240,Web Development,Saad,Mon,16:00-17:30,1010,Computer Lab,30,8,Underutilized
 53041,CS201,Cybersecurity,Ali,Mon,08:00-09:30,2001,Lecture Hall,55,41,Normal

@@ -27,8 +27,12 @@
 <body>
   <nav class="navbar navbar-expand-lg dt-navbar">
     <div class="container-fluid">
-      <a class="navbar-brand" href="{{ url_for('index') }}">
+      <a class="navbar-brand dt-brand" href="{{ url_for('index') }}">
         <img src="{{ url_for('static', filename='logo.svg') }}" alt="Classroom Scheduler Logo" height="40" class="d-inline-block align-text-top">
+        <span class="dt-brand-text">
+          <span class="dt-brand-title">Classroom Scheduler</span>
+          <span class="dt-brand-subtitle">Smarter Schedules. Better Classrooms.</span>
+        </span>
       </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
@@ -36,7 +40,7 @@
       </button>
 
       <div class="collapse navbar-collapse" id="mainNav">
-        <ul class="navbar-nav ms-auto gap-1">
+        <ul class="navbar-nav ms-auto gap-1 nav-actions">
           <li class="nav-item d-flex align-items-center">
             <button type="button" class="btn btn-sm btn-dt-secondary nav-import-btn" data-bs-toggle="modal" data-bs-target="#importCsvModal">
               Import CSV
@@ -58,6 +62,7 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
+      <p class="nav-panel-kicker">Core Views</p>
       <div class="list-group nav-panel-links">
         <a class="list-group-item list-group-item-action {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Dashboard</a>
         <a class="list-group-item list-group-item-action {% if request.endpoint == 'rooms_view' %}active{% endif %}" href="{{ url_for('rooms_view') }}">Rooms</a>
@@ -197,13 +202,13 @@
   <footer class="dt-footer">
     <div class="dt-footer-left">
       <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary footer-theme-btn">
-        🌙 Dark
+        Dark Mode
       </button>
     </div>
     <div class="dt-footer-center">2026 - Classroom Scheduler Prototype</div>
     <div class="dt-footer-right">
       <a href="{{ url_for('about_twin_view') }}"
-        class="text-decoration-none {% if request.endpoint == 'about_twin_view' %}fw-bold text-dark{% endif %}"
+        class="text-decoration-none dt-footer-link {% if request.endpoint == 'about_twin_view' %}is-active{% endif %}"
         style="color: inherit;">About Twin</a>
     </div>
   </footer>
@@ -221,7 +226,7 @@
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme === 'dark') {
       htmlElem.setAttribute('data-bs-theme', 'dark');
-      themeBtn.textContent = '☀️ Light';
+      themeBtn.textContent = 'Light Mode';
     }
 
     themeBtn.addEventListener('click', () => {
@@ -229,11 +234,11 @@
       if (isDark) {
         htmlElem.removeAttribute('data-bs-theme');
         localStorage.setItem('theme', 'light');
-        themeBtn.textContent = '🌙 Dark';
+        themeBtn.textContent = 'Dark Mode';
       } else {
         htmlElem.setAttribute('data-bs-theme', 'dark');
         localStorage.setItem('theme', 'dark');
-        themeBtn.textContent = '☀️ Light';
+        themeBtn.textContent = 'Light Mode';
       }
     });
 

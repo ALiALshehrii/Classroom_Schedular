@@ -2,14 +2,18 @@
 {% block title %}Schedule – Digital Twin Classroom Scheduler{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
+<div class="page-wrapper schedule-page">
     <div class="page-header">
         <h1>Schedule</h1>
         <p>Prototype view of the academic schedule.</p>
     </div>
 
     <form method="get" action="{{ url_for('schedule_view') }}">
-        <div class="filter-bar">
+        <div class="filter-bar schedule-filter-bar">
+            <div class="filter-bar-heading">
+                <h3>Filter Controls</h3>
+                <p>Slice by day, room, instructor, floor, and status.</p>
+            </div>
             <div>
                 <label>Global Search</label>
                 <input
@@ -81,7 +85,7 @@
                 </select>
             </div>
 
-            <div class="d-flex gap-2 align-items-end">
+            <div class="d-flex gap-2 align-items-end schedule-filter-actions">
                 <button type="submit" class="btn btn-dt-primary">Apply</button>
                 <a href="{{ url_for('schedule_view') }}" class="btn btn-dt-secondary">Reset</a>
             </div>
@@ -89,19 +93,19 @@
     </form>
 
     <div class="legend-row">
-        <span class="status-badge">Normal</span>
-        <span class="status-badge">Overcrowded</span>
-        <span class="status-badge">Underutilized</span>
+        <span class="status-badge status-normal">Normal</span>
+        <span class="status-badge status-overcrowded">Overcrowded</span>
+        <span class="status-badge status-underutilized">Underutilized</span>
     </div>
 
-    <div class="dt-table-wrapper">
+    <div class="dt-table-wrapper schedule-table-shell">
         <div class="table-header">
             <h5 class="table-title">Full Academic Schedule</h5>
             <span class="muted-label">Showing: {{ schedule | length }} sections</span>
         </div>
 
         <div class="table-responsive">
-            <table class="table dt-table mb-0">
+            <table class="table dt-table schedule-table mb-0">
                 <thead>
                     <tr>
                         <th>CRN</th>

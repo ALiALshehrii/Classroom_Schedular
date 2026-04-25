@@ -8,22 +8,22 @@
         <p>Simple actions for overcrowded, underutilized, and conflict cases.</p>
     </div>
 
-    <div class="prototype-grid mb-4">
-        <div class="kpi-card">
+    <div class="prototype-grid mb-4 recommendation-kpi-grid">
+        <div class="kpi-card recommendation-kpi-card">
             <div class="muted-label">Overcrowded</div>
             <div class="kpi-value recommendations-kpi-value">{{ overcrowded_recommendations | length }}</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card recommendation-kpi-card">
             <div class="muted-label">Underutilized</div>
             <div class="kpi-value recommendations-kpi-value">{{ underutilized_recommendations | length }}</div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card recommendation-kpi-card">
             <div class="muted-label">Conflicts</div>
             <div class="kpi-value recommendations-kpi-value">{{ conflict_recommendations | length }}</div>
         </div>
     </div>
 
-    <div class="conflict-card mb-4">
+    <div class="conflict-card mb-4 recommendations-impact-card">
         <div class="recommendations-impact-title">Overcrowded Impact</div>
         <div class="muted-label">
             Applying overcrowded actions changes utilization from
@@ -33,7 +33,7 @@
         </div>
     </div>
 
-    <div class="dt-table-wrapper mb-4">
+    <div class="dt-table-wrapper mb-4 rec-section">
         <div class="table-header">
             <h5 class="table-title">Smart Action Queue</h5>
             <span class="muted-label">{{ smart_recommendations | length }} prioritized actions</span>
@@ -60,7 +60,7 @@
                         <td>{{ rec.slot }}</td>
                         <td>R{{ rec.current_room }} → R{{ rec.suggested_room }}</td>
                         <td>
-                            <div class="d-flex flex-wrap gap-2">
+                            <div class="d-flex flex-wrap gap-2 rec-action-group">
                                 <form method="post" action="{{ url_for('apply_recommendation_change') }}">
                                     <input type="hidden" name="rec_type" value="{{ rec.type }}">
                                     <input type="hidden" name="crn" value="{{ rec.crn }}">
@@ -90,7 +90,7 @@
         {% endif %}
     </div>
 
-    <div class="dt-table-wrapper mb-4">
+    <div class="dt-table-wrapper mb-4 rec-section">
         <div class="table-header">
             <h5 class="table-title">Overcrowded Recommendations</h5>
             <span class="muted-label">{{ overcrowded_recommendations | length }} rows</span>
@@ -117,9 +117,9 @@
                         <td>R{{ rec.current_room }} ({{ rec.enrolled }}/{{ rec.current_cap }})</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_cap }}){% else %}-{% endif %}</td>
                         <td>
-                            <div>{{ rec.recommendation_reason }}</div>
+                            <div class="rec-action-text">{{ rec.recommendation_reason }}</div>
                             {% if rec.actionable %}
-                            <div class="d-flex flex-wrap gap-2 mt-2">
+                            <div class="d-flex flex-wrap gap-2 mt-2 rec-action-group">
                                 <form method="post" action="{{ url_for('apply_recommendation_change') }}">
                                     <input type="hidden" name="rec_type" value="overcrowded">
                                     <input type="hidden" name="crn" value="{{ rec.crn }}">
@@ -150,7 +150,7 @@
         {% endif %}
     </div>
 
-    <div class="dt-table-wrapper mb-4">
+    <div class="dt-table-wrapper mb-4 rec-section">
         <div class="table-header">
             <h5 class="table-title">Underutilized Recommendations</h5>
             <span class="muted-label">{{ underutilized_recommendations | length }} rows</span>
@@ -177,9 +177,9 @@
                         <td>R{{ rec.current_room }} ({{ rec.current_util_pct }}%)</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }} ({{ rec.suggested_util_pct }}%){% else %}-{% endif %}</td>
                         <td>
-                            <div>{{ rec.action }}</div>
+                            <div class="rec-action-text">{{ rec.action }}</div>
                             {% if rec.actionable %}
-                            <div class="d-flex flex-wrap gap-2 mt-2">
+                            <div class="d-flex flex-wrap gap-2 mt-2 rec-action-group">
                                 <form method="post" action="{{ url_for('apply_recommendation_change') }}">
                                     <input type="hidden" name="rec_type" value="underutilized">
                                     <input type="hidden" name="crn" value="{{ rec.crn }}">
@@ -210,7 +210,7 @@
         {% endif %}
     </div>
 
-    <div class="dt-table-wrapper">
+    <div class="dt-table-wrapper rec-section">
         <div class="table-header">
             <h5 class="table-title">Conflict Recommendations</h5>
             <span class="muted-label">{{ conflict_recommendations | length }} rows</span>
@@ -237,9 +237,9 @@
                         <td>R{{ rec.current_room }}</td>
                         <td>{% if rec.actionable %}R{{ rec.suggested_room }}{% else %}-{% endif %}</td>
                         <td>
-                            <div>{{ rec.action }}</div>
+                            <div class="rec-action-text">{{ rec.action }}</div>
                             {% if rec.actionable %}
-                            <div class="d-flex flex-wrap gap-2 mt-2">
+                            <div class="d-flex flex-wrap gap-2 mt-2 rec-action-group">
                                 <form method="post" action="{{ url_for('apply_recommendation_change') }}">
                                     <input type="hidden" name="rec_type" value="conflict">
                                     <input type="hidden" name="crn" value="{{ rec.crn }}">

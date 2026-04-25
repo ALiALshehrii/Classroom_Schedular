@@ -345,6 +345,369 @@ def _format_conflict_rows(conflicts: list[dict], limit: int = 6) -> str:
         lines.append(f"- ...and {len(conflicts) - limit} more conflict slots.")
     return "\n".join(lines)
 
+def _extract_crn(message: str) -> Optional[str]:
+    if not message:
+        return None
+    match = re.search(r"\bcrn\s*#?\s*(\d{3,8})\b", message, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return None
+
+
+def _find_crn_in_text(message: str, schedule: pd.DataFrame) -> Optional[str]:
+    if not message:
+        return None
+    explicit = _extract_crn(message)
+    if explicit and not schedule[schedule["CRN"].astype(str) == explicit].empty:
+        return explicit
+
+    crn_set = set(schedule["CRN"].astype(str).tolist())
+    numeric_tokens = re.findall(r"\b(\d{3,8})\b", str(message))
+    for token in numeric_tokens:
+        if token in crn_set:
+            return token
+    return None
+
+
+def _find_course_name_in_text(message: str, schedule: pd.DataFrame) -> Optional[str]:
+    text = str(message).lower()
+    course_names = schedule.get("Course_Name", pd.Series(dtype=str)).astype(str).dropna().unique().tolist()
+    course_names = sorted(course_names, key=lambda name: len(str(name)), reverse=True)
+    for name in course_names:
+        name_text = str(name).strip()
+        if name_text and name_text.lower() in text:
+            return name_text
+    return None
+
+
+def _find_course_code_in_text(message: str, schedule: pd.DataFrame) -> Optional[str]:
+    text = str(message).lower()
+    course_codes = schedule.get("Course_Code", pd.Series(dtype=str)).astype(str).dropna().unique().tolist()
+    course_codes = sorted(course_codes, key=lambda code: len(str(code)), reverse=True)
+    for code in course_codes:
+        code_text = str(code).strip()
+        if code_text and code_text.lower() in text:
+            return code_text
+    return None
+
+
+def _resolve_change_target(message: str, history: list[dict], schedule: pd.DataFrame) -> tuple[Optional[str], Optional[str]]:
+    search_texts = [message] + [
+        item.get("content", "")
+        for item in reversed(history)
+    ]
+
+    crn = None
+    for text in search_texts:
+        crn = _find_crn_in_text(text, schedule)
+        if crn:
+            break
+
+    if crn:
+        return crn, None
+
+    course_name = None
+    course_code = None
+    for text in search_texts:
+        course_name = _find_course_name_in_text(text, schedule) or course_name
+        course_code = _find_course_code_in_text(text, schedule) or course_code
+        if course_name or course_code:
+            break
+
+    if not course_name and not course_code:
+        return None, "Which course should I change? Share a CRN or course name."
+
+    matched = schedule.copy()
+    if course_name:
+        matched = matched[matched["Course_Name"].astype(str).str.lower() == course_name.lower()]
+    if course_code:
+        matched = matched[matched["Course_Code"].astype(str).str.lower() == course_code.lower()]
+
+    unique_crns = sorted(matched["CRN"].astype(str).unique().tolist())
+    if len(unique_crns) == 1:
+        return unique_crns[0], None
+    if len(unique_crns) > 1:
+        return None, "Multiple sections match. Please provide the CRN."
+    return None, "I couldn't find that course in the current schedule."
+
+
+def _is_schedule_change_request(message: str) -> bool:
+    lower = str(message).lower()
+    change_words = ["change", "move", "reschedule", "update", "switch", "shift"]
+    target_words = ["class", "course", "section", "schedule", "room", "time", "day"]
+    return any(word in lower for word in change_words) and any(word in lower for word in target_words)
+
+
+def _has_change_context(history: list[dict]) -> bool:
+    for item in reversed(history[-6:]):
+        content = str(item.get("content", "")).lower()
+        if "crn" in content and ("move" in content or "room" in content or "change" in content):
+            return True
+        if "which room" in content or "move it to" in content:
+            return True
+    return False
+
+
+def _resolve_change_fields(message: str, history: list[dict], rooms: pd.DataFrame, schedule: pd.DataFrame) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    search_texts = [message] + [
+        item.get("content", "")
+        for item in reversed(history)
+        if item.get("role") == "user"
+    ]
+
+    day = None
+    time_value = None
+    room_id = None
+
+    for text in search_texts:
+        if not day:
+            day = _extract_day(text)
+        if not time_value:
+            time_value = _extract_query_time(text)
+        if not room_id:
+            room_id = _extract_room_id(text, rooms)
+        if day and time_value and room_id:
+            break
+
+    matched_time = None
+    if time_value:
+        matched_slots = _match_time_slots(schedule, time_value)
+        if len(matched_slots) == 1:
+            matched_time = matched_slots[0]
+        elif len(matched_slots) > 1:
+            matched_time = None
+        else:
+            matched_time = None
+
+    return day, matched_time, room_id, time_value
+
+
+def _apply_schedule_change(
+    schedule: pd.DataFrame,
+    rooms: pd.DataFrame,
+    crn: str,
+    day: str,
+    time_slot: str,
+    room_id: str,
+) -> tuple[Optional[pd.DataFrame], Optional[str]]:
+    target_rows = schedule[schedule["CRN"].astype(str) == str(crn)]
+    if target_rows.empty:
+        return None, f"CRN {crn} was not found in the current schedule."
+
+    room_match = rooms[rooms["Room_ID"].astype(str) == str(room_id)]
+    if room_match.empty:
+        return None, f"Room {room_id} was not found in the rooms list."
+
+    conflict_rows = schedule[
+        (schedule["Room_ID"].astype(str) == str(room_id))
+        & (schedule["Day"].astype(str).str.lower() == str(day).lower())
+        & (schedule["Time"].astype(str) == str(time_slot))
+        & (schedule["CRN"].astype(str) != str(crn))
+    ]
+    if not conflict_rows.empty:
+        conflict_crns = ", ".join(conflict_rows["CRN"].astype(str).unique().tolist()[:3])
+        return None, (
+            f"Room {room_id} is already booked on {day} at {time_slot} "
+            f"(conflicts with CRN {conflict_crns}). Please choose another room or time."
+        )
+
+    room_info = room_match.iloc[0]
+    updated = schedule.copy()
+    mask = updated["CRN"].astype(str) == str(crn)
+    updated.loc[mask, "Day"] = day
+    updated.loc[mask, "Time"] = time_slot
+    updated.loc[mask, "Room_ID"] = str(room_info["Room_ID"])
+    if "Room_Type" in updated.columns:
+        updated.loc[mask, "Room_Type"] = str(room_info["Type"])
+    if "Capacity" in updated.columns:
+        updated.loc[mask, "Capacity"] = int(room_info["Capacity"])
+
+    updated["Status"] = updated.apply(
+        lambda row: _calc_status_label(int(row["Enrolled"]), int(row["Capacity"])),
+        axis=1,
+    )
+    updated["Utilization_Pct"] = ((updated["Enrolled"] / updated["Capacity"]) * 100).round(1)
+    return updated, None
+def _build_class_summary_row(row: pd.Series) -> str:
+    return (
+        f"CRN {row['CRN']} – {row['Course_Name']} ({row['Instructor']}) "
+        f"on {row['Day']} at {row['Time']} in room {row['Room_ID']} "
+        f"[Enrolled {row['Enrolled']}/{row['Capacity']}, Status: {row['Status']}]"
+    )
+
+
+def _suggest_available_rooms(
+    schedule: pd.DataFrame,
+    rooms: pd.DataFrame,
+    day: str,
+    time_slot: str,
+    enrolled: int,
+    room_type: Optional[str],
+    current_room: Optional[str],
+    limit: int = 5,
+) -> list[str]:
+    candidates = rooms.copy()
+    if room_type:
+        candidates = candidates[candidates["Type"] == room_type]
+    if current_room:
+        candidates = candidates[candidates["Room_ID"].astype(str) != str(current_room)]
+
+    busy_rooms = schedule[
+        (schedule["Day"].astype(str).str.strip().str.lower() == str(day).strip().lower())
+        & (schedule["Time"].astype(str).str.strip() == str(time_slot).strip())
+    ]["Room_ID"].astype(str).tolist()
+
+    free_candidates = candidates[
+        (~candidates["Room_ID"].astype(str).isin(busy_rooms))
+        & (candidates["Capacity"].astype(int) >= int(enrolled))
+    ].copy()
+
+    if free_candidates.empty:
+        return []
+
+    free_candidates["Capacity"] = free_candidates["Capacity"].astype(int)
+    sorted_candidates = free_candidates.sort_values("Capacity").head(limit)
+    return [
+        f"Room {row['Room_ID']} (cap {int(row['Capacity'])})"
+        for _, row in sorted_candidates.iterrows()
+    ]
+
+
+def _persist_schedule_update(schedule_df: pd.DataFrame, active_dataset: str) -> Optional[str]:
+    schedule_to_save = schedule_df[SCHEDULE_COLUMNS]
+    active_path = os.path.join(DATA_DIR, active_dataset)
+    if not os.path.exists(active_path):
+        return f"Active dataset file {active_dataset} was not found."
+    try:
+        schedule_to_save.to_csv(active_path, index=False)
+    except OSError:
+        return f"Could not save change to active dataset ({active_dataset})."
+
+    if os.path.abspath(active_path) != os.path.abspath(analyzer.SCHEDULE_CSV):
+        try:
+            schedule_to_save.to_csv(analyzer.SCHEDULE_CSV, index=False)
+        except OSError:
+            return f"Applied change to {active_dataset}, but failed to sync schedule.csv."
+    return None
+
+
+def _verify_schedule_change_on_disk(
+    active_dataset: str,
+    crn: str,
+    day: str,
+    time_slot: str,
+    room_id: str,
+) -> Optional[str]:
+    dataset_path = os.path.join(DATA_DIR, active_dataset)
+    if not os.path.exists(dataset_path):
+        return f"Active dataset file {active_dataset} was not found."
+    try:
+        df = pd.read_csv(dataset_path)
+    except Exception:
+        return f"Could not reload {active_dataset} to verify the change."
+
+    matches = df[df["CRN"].astype(str) == str(crn)]
+    if matches.empty:
+        return f"CRN {crn} was not found in {active_dataset} after saving."
+
+    normalized_day = str(day).strip().lower()
+    normalized_time = str(time_slot).strip()
+    normalized_room = str(room_id).strip()
+    matches = matches[
+        (matches["Day"].astype(str).str.strip().str.lower() == normalized_day)
+        & (matches["Time"].astype(str).str.strip() == normalized_time)
+        & (matches["Room_ID"].astype(str).str.strip() == normalized_room)
+    ]
+    if matches.empty:
+        return f"The saved file still shows a different room/time for CRN {crn}."
+    return None
+
+
+def _handle_schedule_change_request(
+    message: str,
+    history: list[dict],
+    rooms: pd.DataFrame,
+    schedule: pd.DataFrame,
+) -> Optional[str]:
+    room_id_hint = _extract_room_id(message, rooms)
+    if not _is_schedule_change_request(message):
+        if not (room_id_hint and _has_change_context(history)):
+            return None
+
+    crn, error = _resolve_change_target(message, history, schedule)
+    if error:
+        return error
+    day, matched_time, room_id, raw_time = _resolve_change_fields(message, history, rooms, schedule)
+    if not room_id and room_id_hint:
+        room_id = room_id_hint
+    current_row = schedule[schedule["CRN"].astype(str) == str(crn)]
+    if not current_row.empty:
+        row = current_row.iloc[0]
+        if not day:
+            day = str(row["Day"]).strip()
+        if not matched_time:
+            matched_time = str(row["Time"]).strip()
+    missing_fields = []
+    if not day:
+        missing_fields.append("day")
+    if not matched_time:
+        missing_fields.append("time")
+    if not room_id:
+        missing_fields.append("room")
+
+    if missing_fields:
+        if not current_row.empty:
+            row = current_row.iloc[0]
+            summary = _build_class_summary_row(row)
+            suggestion_text = ""
+            if "room" in missing_fields:
+                suggestions = _suggest_available_rooms(
+                    schedule=schedule,
+                    rooms=rooms,
+                    day=str(row["Day"]).strip(),
+                    time_slot=str(row["Time"]).strip(),
+                    enrolled=int(row["Enrolled"]),
+                    room_type=str(row.get("Room_Type", "")).strip() or None,
+                    current_room=str(row["Room_ID"]),
+                    limit=5,
+                )
+                if suggestions:
+                    suggestion_text = "Available rooms: " + "; ".join(suggestions) + "."
+                else:
+                    suggestion_text = "No same-type rooms are free at that time."
+            missing = ", ".join(missing_fields)
+            return f"{summary}\nTo update the class, please provide: {missing}. {suggestion_text}".strip()
+
+        missing = ", ".join(missing_fields)
+        return f"To update the class, please provide: {missing}."
+
+    updated, update_error = _apply_schedule_change(
+        schedule=schedule,
+        rooms=rooms,
+        crn=crn,
+        day=day,
+        time_slot=matched_time,
+        room_id=room_id,
+    )
+    if update_error:
+        return update_error
+
+    active_dataset = _get_active_schedule_dataset()
+    persist_error = _persist_schedule_update(updated, active_dataset)
+    if persist_error:
+        return persist_error
+
+    verify_error = _verify_schedule_change_on_disk(
+        active_dataset=active_dataset,
+        crn=crn,
+        day=day,
+        time_slot=matched_time,
+        room_id=room_id,
+    )
+    if verify_error:
+        return verify_error
+
+    return f"Applied change for CRN {crn}: moved to {day} at {matched_time} in room {room_id} (saved to {active_dataset})."
 
 def _answer_from_local_data(
     message: str,
@@ -1182,9 +1545,16 @@ def api_chat():
         return jsonify({"error": "No message provided."}), 400
 
     rooms, schedule, _ = get_data()
+    active_dataset = _get_active_schedule_dataset()
+    active_schedule = _load_schedule_from_dataset(active_dataset)
+    if active_schedule is None:
+        active_schedule = schedule
 
     resolved_message = _expand_followup_message(message, history, rooms)
-    local_reply = _answer_from_local_data(message, rooms, schedule, history=history)
+    change_reply = _handle_schedule_change_request(resolved_message, history, rooms, active_schedule)
+    if change_reply:
+        return jsonify({"reply": change_reply})
+    local_reply = _answer_from_local_data(message, rooms, active_schedule, history=history)
     if local_reply:
         return jsonify({"reply": local_reply})
 
@@ -1207,7 +1577,7 @@ def api_chat():
             system_instruction=CHATBOT_SYSTEM_INSTRUCTION,
         )
 
-        context = _build_chat_context(rooms, schedule)
+        context = _build_chat_context(rooms, active_schedule)
         history_text = "\n".join(
             f"{'User' if item['role'] == 'user' else 'Assistant'}: {item['content']}"
             for item in history[-10:]

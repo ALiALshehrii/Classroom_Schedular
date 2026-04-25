@@ -2,14 +2,14 @@
 {% block title %}Simulation – Digital Twin Classroom Scheduler{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
+<div class="page-wrapper simulation-page">
     <div class="page-header">
         <h1>Simulation</h1>
         <p>Prototype tool for checking a room change before making it.</p>
     </div>
 
     <div class="sim-form-card">
-        <h5 style="margin-bottom:1rem;font-weight:700;">Simulation Parameters</h5>
+        <h5 class="simulation-form-title">Simulation Parameters</h5>
 
         <form method="post" action="{{ url_for('simulation_view') }}">
             <div class="row g-3 align-items-end">
@@ -36,7 +36,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-dt-primary w-100" style="height:42px;">Run Simulation</button>
+                    <button type="submit" class="btn btn-dt-primary w-100 simulation-submit-btn">Run Simulation</button>
                 </div>
             </div>
         </form>
@@ -52,23 +52,23 @@
 
     {% if result %}
     <div class="sim-result">
-        <div class="chart-card mb-3">
+        <div class="chart-card mb-3 simulation-result-head">
             <div class="row">
                 <div class="col-sm-6 col-lg-3">
                     <div class="muted-label">Section (CRN)</div>
-                    <div style="font-weight:700;font-size:1.1rem;">{{ result.crn }}</div>
+                    <div class="simulation-value-main">{{ result.crn }}</div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
                     <div class="muted-label">Course Name</div>
-                    <div style="font-weight:600;">{{ result.course_name }}</div>
+                    <div class="simulation-value">{{ result.course_name }}</div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
                     <div class="muted-label">Instructor</div>
-                    <div style="font-weight:600;">{{ result.instructor }}</div>
+                    <div class="simulation-value">{{ result.instructor }}</div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
                     <div class="muted-label">Day / Time</div>
-                    <div style="font-weight:600;">{{ result.day }} - {{ result.time }}</div>
+                    <div class="simulation-value">{{ result.day }} - {{ result.time }}</div>
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@
                     <div class="compare-meta">Capacity: <strong>{{ result.old_capacity }}</strong></div>
                     <div class="compare-util">{{ result.old_util }}%</div>
 
-                    <div class="util-bar" style="height:10px;margin:0 auto 1rem;max-width:220px;">
+                    <div class="util-bar simulation-compare-bar">
                         <div class="util-bar-inner" style="width:{{ [result.old_util, 100]|min }}%;"></div>
                     </div>
 
@@ -104,7 +104,7 @@
                     <div class="compare-meta">Capacity: <strong>{{ result.new_capacity }}</strong></div>
                     <div class="compare-util">{{ result.new_util }}%</div>
 
-                    <div class="util-bar" style="height:10px;margin:0 auto 1rem;max-width:220px;">
+                    <div class="util-bar simulation-compare-bar">
                         <div class="util-bar-inner" style="width:{{ [result.new_util, 100]|min }}%;"></div>
                     </div>
 
