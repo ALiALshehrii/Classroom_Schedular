@@ -1,0 +1,3 @@
+timestamp,action,crn,instructor,day,time,room_id,details
+2026-04-27T13:50:54,confirm,53067,Ali,Sun,14:00-15:30,2009,ADHOC Ad-hoc Booking for 15 students
+2026-04-27T22:49:51,confirm,53068,Sara,Sun,14:00-15:30,1001,ADHOC Ad-hoc Booking for 15 students

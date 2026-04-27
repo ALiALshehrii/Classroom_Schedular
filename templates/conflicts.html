@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Conflicts – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Conflicts</h1>
+        <p>Prototype report for room conflicts and utilization problems.</p>
+    </div>
+
+    <div class="prototype-grid mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-value">{{ room_conflicts | length }}</div>
+                <div class="kpi-label">Room Conflicts</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-value">{{ overcrowded | length }}</div>
+                <div class="kpi-label">Overcrowded Sections</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card">
+                <div class="kpi-value">{{ underutilized | length }}</div>
+                <div class="kpi-label">Underutilized Sections</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="section-header">
+            Room Conflicts (Double Booking)
+            <span class="count-badge">{{ room_conflicts | length }}</span>
+        </div>
+
+        {% if room_conflicts %}
+        {% for c in room_conflicts %}
+        <div class="conflict-card mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <div class="conflict-title">
+                        Room {{ c.room_id }} - {{ c.day }} at {{ c.time }}
+                    </div>
+                    <div class="conflict-meta">
+                        <span class="me-3">CRNs: {{ c.crns }}</span>
+                        <span>{{ c.courses }}</span>
+                    </div>
+                </div>
+                <span class="status-badge">
+                    {{ c.count }} conflicting sections
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="conflict-card">
+            <div class="empty-state" style="padding:1.5rem;">
+                <h5 class="mt-2">No Room Conflicts Detected</h5>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        <div class="section-header">
+            Overcrowded Sections (Enrolled &gt; Capacity)
+            <span class="count-badge">{{ overcrowded | length }}</span>
+        </div>
+
+        {% if overcrowded %}
+        {% for c in overcrowded %}
+        <div class="conflict-card mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <div class="conflict-title">
+                        CRN {{ c.CRN }} - {{ c.Course_Name }}
+                    </div>
+                    <div class="conflict-meta">
+                        {{ c.Instructor }} | Room {{ c.Room_ID }} | {{ c.Day }} at {{ c.Time }}
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div style="font-size:1.2rem;font-weight:700;">{{ c.Utilization_Pct }}%</div>
+                    <div class="muted-label">
+                        {{ c.Enrolled }} enrolled / {{ c.Capacity }} seats
+                        (+{{ c.Enrolled - c.Capacity }} over)
+                    </div>
+                </div>
+            </div>
+            <div class="util-bar mt-3" style="height:10px;">
+                <div class="util-bar-inner" style="width:{{ [c.Utilization_Pct, 100] | min }}%;">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="conflict-card">
+            <div class="empty-state" style="padding:1.5rem;">
+                <h5 class="mt-2">No Overcrowded Sections</h5>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        <div class="section-header">
+            Underutilized Sections (Below 40% Capacity)
+            <span class="count-badge">{{ underutilized | length }}</span>
+        </div>
+
+        {% if underutilized %}
+        {% for c in underutilized %}
+        <div class="conflict-card mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <div class="conflict-title">
+                        CRN {{ c.CRN }} - {{ c.Course_Name }}
+                    </div>
+                    <div class="conflict-meta">
+                        {{ c.Instructor }} | Room {{ c.Room_ID }} | {{ c.Day }} at {{ c.Time }}
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div style="font-size:1.2rem;font-weight:700;">{{ c.Utilization_Pct }}%</div>
+                    <div class="muted-label">
+                        {{ c.Enrolled }} enrolled / {{ c.Capacity }} seats
+                    </div>
+                </div>
+            </div>
+            <div class="util-bar mt-3" style="height:8px;">
+                <div class="util-bar-inner" style="width:{{ c.Utilization_Pct }}%;"></div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="conflict-card">
+            <div class="empty-state" style="padding:1.5rem;">
+                <h5 class="mt-2">No Underutilized Sections</h5>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

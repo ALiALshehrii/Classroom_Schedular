@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}AI Booking Agent – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>AI Booking Agent</h1>
+        <p>Chat with the assistant to reserve a classroom. Describe who is teaching, when, how many students, and what room type — the agent will find and book a matching slot.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="sim-form-card p-0 agent-chat-card">
+                <div class="agent-chat-header">
+                    <div>
+                        <div class="agent-chat-title">Booking Assistant</div>
+                        <div class="agent-chat-subtitle">Natural language room reservations</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-dt-secondary" id="agentResetBtn">Start over</button>
+                </div>
+
+                <div class="agent-chat-messages" id="agentChatMessages" aria-live="polite"></div>
+
+                <div class="agent-confirm-actions d-none" id="agentConfirmActions">
+                    <button type="button" class="btn btn-sm btn-dt-primary" id="agentConfirmBtn">Confirm booking</button>
+                    <button type="button" class="btn btn-sm btn-dt-secondary" id="agentCancelConfirmBtn">Choose another option</button>
+                </div>
+
+                <div class="agent-suggestions" id="agentSuggestions"></div>
+
+                <form class="agent-chat-input-wrap" id="agentChatForm">
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="agentMessageInput"
+                        placeholder="e.g. Book a Lecture Hall for Dr. Sara on Monday at 10:00 for 30 students"
+                        autocomplete="off"
+                    >
+                    <button type="submit" class="btn btn-dt-primary" id="agentSendBtn">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sim-form-card">
+                <h5 class="mb-3">Booking Draft</h5>
+                <div class="agent-state-list" id="agentStateList">
+                    <div class="muted-label">Nothing captured yet.</div>
+                </div>
+            </div>
+
+            <div class="sim-form-card mt-3">
+                <h5 class="mb-2">Try saying</h5>
+                <ul class="agent-examples">
+                    <li>"I'm Dr. Ali, I need a Computer Lab on Tuesday at 12:00 for 45 students."</li>
+                    <li>"Book Lecture Hall for Dr. Sara, Monday 10:00, 30 students, course CS202."</li>
+                    <li>"Reserve room 3007 on Wednesday at 14:00 for Dr. Omar with 40 students."</li>
+                </ul>
+                <div class="muted-label small">Known days: {{ days|join(', ') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.agent-chat-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 540px;
+    overflow: hidden;
+}
+.agent-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+.agent-chat-title { font-weight: 700; font-size: 1.05rem; }
+.agent-chat-subtitle { color: var(--muted); font-size: 0.85rem; }
+.agent-chat-messages {
+    flex: 1;
+    padding: 18px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 320px;
+    max-height: 480px;
+}
+.agent-msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-size: 0.95rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.agent-msg-ai {
+    background: var(--primary-light);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+.agent-msg-user {
+    background: var(--primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+.agent-msg-success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    align-self: flex-start;
+}
+.agent-msg-error {
+    background: rgba(244, 63, 94, 0.12);
+    border: 1px solid rgba(244, 63, 94, 0.35);
+    align-self: flex-start;
+}
+.agent-suggestions {
+    padding: 0 20px 4px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+.agent-confirm-actions {
+    padding: 0 20px 10px 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.agent-suggestion-card {
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.agent-suggestion-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+.agent-suggestion-card .room-id { font-weight: 700; font-size: 1rem; }
+.agent-suggestion-card .meta { font-size: 0.82rem; color: var(--muted); }
+.agent-suggestion-card .fit-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    align-self: flex-start;
+}
+.agent-chat-input-wrap {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.4);
+}
+.agent-chat-input-wrap input { flex: 1; }
+.agent-state-list { display: flex; flex-direction: column; gap: 6px; font-size: 0.92rem; }
+.agent-state-row { display: flex; justify-content: space-between; gap: 8px; }
+.agent-state-row .label { color: var(--muted); }
+.agent-state-row .value { font-weight: 600; text-align: right; word-break: break-word; }
+.agent-examples { padding-left: 18px; margin-bottom: 6px; font-size: 0.9rem; color: var(--text); }
+.agent-examples li { margin-bottom: 4px; }
+[data-bs-theme="dark"] .agent-suggestion-card { background: rgba(30, 41, 59, 0.6); }
+</style>
+
+<script>
+(() => {
+    const chatMessages = document.getElementById('agentChatMessages');
+    const chatForm = document.getElementById('agentChatForm');
+    const chatInput = document.getElementById('agentMessageInput');
+    const sendBtn = document.getElementById('agentSendBtn');
+    const suggestionsBox = document.getElementById('agentSuggestions');
+    const stateList = document.getElementById('agentStateList');
+    const resetBtn = document.getElementById('agentResetBtn');
+    const confirmActions = document.getElementById('agentConfirmActions');
+    const confirmBtn = document.getElementById('agentConfirmBtn');
+    const cancelConfirmBtn = document.getElementById('agentCancelConfirmBtn');
+
+    let bookingState = {
+        instructor: null, day: null, time: null, num_students: null,
+        room_type: null, preferred_room: null, course_name: null, course_code: null,
+    };
+    let pendingSuggestion = null;
+
+    const STATE_LABELS = {
+        instructor: 'Instructor',
+        course_code: 'Course Code',
+        course_name: 'Course Name',
+        day: 'Day',
+        time: 'Time',
+        num_students: 'Students',
+        room_type: 'Room Type',
+        preferred_room: 'Preferred Room',
+    };
+
+    const appendMessage = (text, variant) => {
+        const div = document.createElement('div');
+        div.className = `agent-msg agent-msg-${variant}`;
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+
+    const renderState = () => {
+        stateList.innerHTML = '';
+        const entries = Object.entries(STATE_LABELS)
+            .filter(([k]) => bookingState[k] !== null && bookingState[k] !== undefined && bookingState[k] !== '');
+        if (!entries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'muted-label';
+            empty.textContent = 'Nothing captured yet.';
+            stateList.appendChild(empty);
+            return;
+        }
+        for (const [key, label] of entries) {
+            const row = document.createElement('div');
+            row.className = 'agent-state-row';
+            row.innerHTML = `<span class="label">${label}</span><span class="value"></span>`;
+            const value = Array.isArray(bookingState[key]) ? bookingState[key].join(', ') : bookingState[key];
+            row.querySelector('.value').textContent = String(value);
+            stateList.appendChild(row);
+        }
+    };
+
+    const roomTypeLabel = (value) => {
+        if (value === 'Computer Lab') return 'Lab';
+        if (value === 'Lecture Hall') return 'Hall';
+        return value || '';
+    };
+
+    const dayLabel = (value) => Array.isArray(value) ? value.join(', ') : (value || '');
+
+    const summaryText = (suggestion) => {
+        const line = (label, value) => `│ ${`${label.padEnd(11)}: ${String(value)}`.padEnd(31)} │`;
+        return [
+            '┌─────────────────────────────────┐',
+            '│ BOOKING SUMMARY - IMSIU CCIS    │',
+            '├─────────────────────────────────┤',
+            line('Instructor', bookingState.instructor),
+            line('Day', dayLabel(suggestion.day || bookingState.day)),
+            line('Time', suggestion.time || bookingState.time),
+            line('Room Type', roomTypeLabel(suggestion.room_type || bookingState.room_type)),
+            line('Room ID', suggestion.room_id),
+            line('Capacity', suggestion.capacity),
+            line('Students', bookingState.num_students),
+            '└─────────────────────────────────┘',
+            '',
+            'Shall I confirm this booking?',
+        ].join('\n');
+    };
+
+    const setPendingSuggestion = (suggestion, announce = true) => {
+        pendingSuggestion = suggestion || null;
+        confirmActions.classList.toggle('d-none', !pendingSuggestion);
+        if (pendingSuggestion && announce) appendMessage(summaryText(pendingSuggestion), 'ai');
+    };
+
+    const renderSuggestions = (suggestions) => {
+        suggestionsBox.innerHTML = '';
+        if (!suggestions || !suggestions.length) return;
+        suggestions.forEach((s) => {
+            const card = document.createElement('div');
+            card.className = 'agent-suggestion-card';
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="room-id">Room ${s.room_id}</div>
+                    <span class="fit-badge bg-${s.fit_level}">${s.fit_label}</span>
+                </div>
+                <div class="meta">Floor ${s.floor} · ${s.room_type_label || roomTypeLabel(s.room_type)} · Capacity ${s.capacity}</div>
+                <div class="meta"><strong>${s.display_day || dayLabel(s.day)}</strong> · ${s.time}</div>
+                <div class="meta">Utilization if placed: ${s.utilization_pct}% · Slack: ${s.slack}</div>
+                ${s.alternative_note ? `<div class="meta"><strong>Alternative:</strong> ${s.alternative_note}</div>` : ''}
+                <button type="button" class="btn btn-sm btn-dt-primary mt-1">Prepare summary</button>
+            `;
+            card.querySelector('button').addEventListener('click', () => setPendingSuggestion(s, true));
+            suggestionsBox.appendChild(card);
+        });
+    };
+
+    const setBusy = (busy) => {
+        chatInput.disabled = busy;
+        sendBtn.disabled = busy;
+        if (!busy) chatInput.focus();
+    };
+
+    const sendMessage = async (message, reset = false) => {
+        setBusy(true);
+        try {
+            const response = await fetch('{{ url_for("booking_agent_api") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, state: bookingState, reset, pending_suggestion: pendingSuggestion }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                appendMessage(data.error || 'Something went wrong.', 'error');
+                return;
+            }
+            if (data.state) {
+                bookingState = { ...bookingState, ...data.state };
+                renderState();
+            }
+            if (data.reply) appendMessage(data.reply, 'ai');
+            if (data.pending_suggestion) {
+                setPendingSuggestion(data.pending_suggestion, false);
+            } else if (data.stage !== 'awaiting_confirmation') {
+                setPendingSuggestion(null, false);
+            }
+            renderSuggestions(data.suggestions || []);
+        } catch (err) {
+            appendMessage('Network error — please try again.', 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const confirmBooking = async (suggestion) => {
+        setBusy(true);
+        try {
+            const response = await fetch('{{ url_for("booking_agent_confirm_api") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: bookingState, suggestion }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) {
+                appendMessage(data.error || 'Could not complete the booking.', 'error');
+                return;
+            }
+            appendMessage(data.reply || 'Booking confirmed.', 'success');
+            suggestionsBox.innerHTML = '';
+            setPendingSuggestion(null, false);
+            bookingState = {
+                instructor: null, day: null, time: null, num_students: null,
+                room_type: null, preferred_room: null, course_name: null, course_code: null,
+            };
+            renderState();
+        } catch (err) {
+            appendMessage('Network error while booking — please try again.', 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = chatInput.value.trim();
+        if (!value) return;
+        appendMessage(value, 'user');
+        chatInput.value = '';
+        if (pendingSuggestion && /^(yes|y|confirm|confirm booking|book it|finalize)$/i.test(value)) {
+            confirmBooking(pendingSuggestion);
+            return;
+        }
+        if (pendingSuggestion && /^(no|n|cancel|choose another|not yet)$/i.test(value)) {
+            setPendingSuggestion(null, false);
+            appendMessage('No problem. Choose another suggestion or update the booking details.', 'ai');
+            return;
+        }
+        sendMessage(value, false);
+    });
+
+    resetBtn.addEventListener('click', () => {
+        bookingState = {
+            instructor: null, day: null, time: null, num_students: null,
+            room_type: null, preferred_room: null, course_name: null, course_code: null,
+        };
+        chatMessages.innerHTML = '';
+        suggestionsBox.innerHTML = '';
+        setPendingSuggestion(null, false);
+        renderState();
+        sendMessage('', true);
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        if (pendingSuggestion) confirmBooking(pendingSuggestion);
+    });
+
+    cancelConfirmBtn.addEventListener('click', () => {
+        setPendingSuggestion(null, false);
+        appendMessage('No problem. Choose another suggestion or update the booking details.', 'ai');
+    });
+
+    renderState();
+    sendMessage('', true);
+})();
+</script>
+{% endblock %}

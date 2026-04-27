@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Analytics – Digital Twin Classroom Scheduler{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1>Enhanced Analytics</h1>
+        <p>Computed directly from the current digital twin state.</p>
+    </div>
+
+    <div class="section-header">A) Building Overview KPIs</div>
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.total_rooms }}</div>
+            <div class="kpi-label">Total Rooms</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.lecture_halls }}</div>
+            <div class="kpi-label">Lecture Halls</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.computer_labs }}</div>
+            <div class="kpi-label">Computer Labs</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.total_sections }}</div>
+            <div class="kpi-label">Total Sections</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.active_slots }}</div>
+            <div class="kpi-label">Active Time Slots</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.empty_slots }}</div>
+            <div class="kpi-label">Empty Slots</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.overview.overall_utilization }}%</div>
+            <div class="kpi-label">Overall Utilization</div>
+        </div>
+    </div>
+
+    <div class="section-header">B) Problem Summary</div>
+    <div class="prototype-grid mb-4">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.overcrowded_sections }}</div>
+            <div class="kpi-label">Overcrowded Sections</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.underutilized_sections }}</div>
+            <div class="kpi-label">Underutilized Sections</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.double_booked_slots }}</div>
+            <div class="kpi-label">Double-Booked Slots</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.most_overcrowded_room }}</div>
+            <div class="kpi-label">Most Overcrowded Room</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.most_underused_room }}</div>
+            <div class="kpi-label">Most Underused Room</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.peak_hour }}</div>
+            <div class="kpi-label">Peak Hour</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ analytics.problems.quietest_hour }}</div>
+            <div class="kpi-label">Quietest Hour</div>
+        </div>
+    </div>
+
+    <div class="dt-table-wrapper mb-4">
+        <div class="table-header">
+            <h5 class="table-title">C) Per-Floor Breakdown</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped dt-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Floor</th>
+                        <th>Rooms</th>
+                        <th>Total Sections</th>
+                        <th>Avg Occupancy %</th>
+                        <th>Overcrowded</th>
+                        <th>Underutilized</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in analytics.floor_breakdown %}
+                    <tr>
+                        <td>{{ row.floor }}</td>
+                        <td>{{ row.rooms_count }}</td>
+                        <td>{{ row.sections_count }}</td>
+                        <td>{{ row.avg_occupancy_pct }}%</td>
+                        <td class="{% if row.overcrowded_count > 0 %}table-danger{% endif %}">{{ row.overcrowded_count
+                            }}</td>
+                        <td class="{% if row.underutilized_count > 0 %}table-warning{% endif %}">{{
+                            row.underutilized_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dt-table-wrapper mb-4">
+        <div class="table-header">
+            <h5 class="table-title">D) Per-Course Analysis</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped dt-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Sections</th>
+                        <th>Total Enrolled</th>
+                        <th>Avg Occupancy %</th>
+                        <th>Normal</th>
+                        <th>Overcrowded</th>
+                        <th>Underutilized</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in analytics.course_analysis %}
+                    <tr>
+                        <td>{{ row.course_code }}</td>
+                        <td>{{ row.course_name }}</td>
+                        <td>{{ row.sections_count }}</td>
+                        <td>{{ row.total_enrolled }}</td>
+                        <td>{{ row.avg_occupancy_pct }}%</td>
+                        <td>{{ row.normal_count }}</td>
+                        <td class="{% if row.overcrowded_count > 0 %}table-danger{% endif %}">{{ row.overcrowded_count
+                            }}</td>
+                        <td class="{% if row.underutilized_count > 0 %}table-warning{% endif %}">{{
+                            row.underutilized_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dt-table-wrapper">
+        <div class="table-header">
+            <h5 class="table-title">E) Instructor Load Summary</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped dt-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Instructor</th>
+                        <th>Sections</th>
+                        <th>Total Students</th>
+                        <th>Rooms Used</th>
+                        <th>Floors Used</th>
+                        <th>Most Common Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in analytics.instructor_load %}
+                    <tr>
+                        <td>{{ row.instructor }}</td>
+                        <td>{{ row.sections_count }}</td>
+                        <td>{{ row.total_students }}</td>
+                        <td>{{ row.rooms_used }}</td>
+                        <td>{{ row.floors_used }}</td>
+                        <td>{{ row.most_common_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
